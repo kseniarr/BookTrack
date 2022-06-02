@@ -5,18 +5,19 @@ import consts from '../config/consts'
 import { TouchableOpacity } from 'react-native'
 import CustomText from "./../components/CustomText"
 
-const CustomButton = ({ text, onPress, label = "Button", size = 14, weight = "regular", width }) => {
+const CustomButton = ({ text, onPress, label = "Button", size = 14, weight = "regular", width, backgroundColor = colors.primaryColor, align }) => {
     return (
         <TouchableOpacity 
-                style={[styles.btn, {width: width}]}
-                activeOpacity={0.5}
+                style={[styles.btn, {width: width, backgroundColor: backgroundColor}]}
+                activeOpacity={0.8}
                 accessibilityLabel={label}
                 onPress={onPress}>
                         <CustomText 
                                     text={text} 
-                                    color={colors.white} 
+                                    color={ backgroundColor == colors.primaryColor ? colors.white : colors.black} 
                                     size={size} 
-                                    weight={weight}/>
+                                    weight={weight}
+                                    align={align}/>
         </TouchableOpacity>
     )
 }
@@ -26,7 +27,6 @@ export default CustomButton
 const styles = StyleSheet.create({
     btn: {
         borderRadius: consts.borderRadius,
-        backgroundColor: colors.primaryColor,
         paddingVertical: 10,
         paddingHorizontal: 20,
         alignItems: 'center',

@@ -9,34 +9,38 @@ import { TextInput } from 'react-native-gesture-handler'
 const HomeScreen = () => {
     const nytApiKey = "FFfJWvHZLXNGlVX8SRPICahCCtedaJT2";
     const [popularBooks, setPopularBooks] = useState(null);
-    const [popularISBNS, setPopularISBNS] = useState(null);
+    const [popularISBNS, setPopularISBNS] = useState([{element: "0547249640"}]);
     const [isbns, setIsbns] = useState(null);
     const [input, setInput] = useState("");
     const [header, setHeader] = useState("Popular Books");
     const [isInputSet, setIsInputSet] = useState(false);
 
-    useEffect(() => {
-        fetch('https://api.nytimes.com/svc/books/v3/lists.json?list-name=hardcover-fiction&api-key=' + nytApiKey,
-            { method: 'get', })
-            .then(response => { return response.json(); })
-            .then(json => {
-                setPopularBooks(json)
-            })
-            .catch(err => console.log(err));
-    }, []);
+    // ----------   TEMPORARY COMMENTED OUT  ----------
 
-    useEffect(() => {
-        const loadData = () => {
-            if (popularISBNS == null && popularBooks !== null) {
-                setPopularISBNS(popularBooks?.results.map(element => {
-                    return { element: element.book_details[0].primary_isbn13 }
-                }));
-            }
-        }
+    // useEffect(() => {
+    //     fetch('https://api.nytimes.com/svc/books/v3/lists.json?list-name=hardcover-fiction&api-key=' + nytApiKey,
+    //         { method: 'get', })
+    //         .then(response => { return response.json(); })
+    //         .then(json => {
+    //             setPopularBooks(json)
+    //         })
+    //         .catch(err => console.log(err));
+    // }, []);
 
-        loadData();
-        setIsInputSet(false);
-    }, [popularBooks])
+    // useEffect(() => {
+    //     const loadData = () => {
+    //         if (popularISBNS == null && popularBooks !== null) {
+    //             setPopularISBNS(popularBooks?.results.map(element => {
+    //                 return { element: element.book_details[0].primary_isbn13 }
+    //             }));
+    //         }
+    //     }
+
+    //     loadData();
+    //     setIsInputSet(false);
+    // }, [popularBooks])
+
+    // ----------   TEMPORARY COMMENTED OUT  ----------
 
     const handleSubmit = async () => {
         const loadData = async () => {

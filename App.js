@@ -8,6 +8,7 @@ import AppLoading from 'expo-app-loading';
 import { LogBox } from 'react-native';
 import { AppStateProvider } from './app/components/AppStateContext';
 import SignupScreen from './app/screens/SignupScreen';
+import BookScreen from './app/screens/BookScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -37,6 +38,7 @@ export default function App() {
                     <Stack.Screen options={{ headerShown: false }} name="Login" component={LoginScreen} />
                     <Stack.Screen options={{ headerShown: false }} name="Signup" component={SignupScreen} />
                     <Stack.Screen options={{ headerShown: false }} name="Main" component={MainContainer} />
+                    <Stack.Screen options={{ headerShown: false }} name="Book" component={BookScreen} />
                 </Stack.Navigator>
             </NavigationContainer>
         </AppStateProvider>

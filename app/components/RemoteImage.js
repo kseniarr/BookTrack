@@ -10,6 +10,7 @@ const RemoteImage = ({uri, desiredWidth, alignSelf}) => {
 
     return (
         <Image
+            resizeMethod='scale'
             source={{uri}}
             style={{
                 borderWidth: 1,

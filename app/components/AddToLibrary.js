@@ -43,7 +43,6 @@ const AddToLibrary = ({align}) => {
                 </Modal>}
                 <View style={{
                     alignSelf: align,
-                    backgroundColor: colors.white,
                 }}>
                     <CustomButton
                         text={"Add to library"}
@@ -78,6 +77,7 @@ const styles = StyleSheet.create({
             width: 0,
             height: 2
         },
+        zIndex: 100,
     },
     options: {
         marginTop: 20,

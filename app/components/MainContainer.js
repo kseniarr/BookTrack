@@ -3,13 +3,11 @@ import React from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import HomeScreen from '../screens/HomeScreen'
-import MyLibraryScreen from '../screens/MyLibraryScreen'
 import ProfileScreen from '../screens/ProfileScreen'
 import SettingsScreen from '../screens/SettingsScreen'
 import colors from '../config/colors'
 
 const homeName = "Home";
-const libName = "MyLibrary";
 const profileName = "Profile";
 const settingsName = "Settings";
 
@@ -26,8 +24,6 @@ const MainContainer = () => {
 
                     if (rn === homeName) {
                         iconName = focused ? "home" : "home-outline"
-                    } else if (rn === libName) {
-                        iconName = focused ? "list" : "list-outline"
                     } else if (rn === profileName) {
                         iconName = focused ? "person" : "person-outline"
                     } else if (rn === settingsName) {
@@ -50,7 +46,6 @@ const MainContainer = () => {
                 tabBarHideOnKeyboard: "false",
             })}>
             <Tab.Screen options={{ headerShown: false }} name={homeName} component={HomeScreen} />
-            <Tab.Screen options={{ headerShown: false }} name={libName} component={MyLibraryScreen} />
             <Tab.Screen options={{ headerShown: false }} name={profileName} component={ProfileScreen} />
             <Tab.Screen options={{ headerShown: false }} name={settingsName} component={SettingsScreen} />
         </Tab.Navigator>);

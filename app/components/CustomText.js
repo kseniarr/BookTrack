@@ -8,10 +8,12 @@ const CustomText = ({ text, size = 14, color = colors.black,
                       lineHeight,
                       textShadowOffset, 
                       textShadowRadius,
-                      textShadowColor, }) => {
+                      textShadowColor,
+                      numberOfLines, }) => {
     return (
         <TouchableWithoutFeedback onPress={onPress}>
-            <Text style={{
+            <Text numberOfLines={numberOfLines}
+            style={{
                 fontSize: size, 
                 color: color,
                 textAlign: align,

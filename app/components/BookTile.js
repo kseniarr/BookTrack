@@ -4,8 +4,9 @@ import CustomText from './CustomText';
 import RemoteImage from './RemoteImage';
 import { useNavigation } from '@react-navigation/core';
 import AddToLibrary from './AddToLibrary';
+import consts from '../config/consts';
 
-const BookTile = ({ isbn13 }) => {
+const BookTile = ({ id }) => {
     const [coverURL, setCoverURL] = useState();
     const [bookTitle, setBookTitle] = useState();
     const [bookAuthors, setBookAuthors] = useState([]);
@@ -13,22 +14,59 @@ const BookTile = ({ isbn13 }) => {
     const [rating, setRating] = useState(4.5);
 
     const navigation = useNavigation();
+    let type = "id";
 
     useEffect(() => {
-        const func = async () => {
-            const response = await fetch("https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn13, {method: "GET"})
-            const json = await response.json(); 
+        const getBookAuthors = (authors) => {
+            if(authors.length > 1) {
+                let authorsStr = "";
+                for(let i = 0; i < authors.length; i++) {
+                    if(i == authors.length - 1) {
+                        authorsStr += authors[i];
+                    } else {
+                        authorsStr += authors[i] + ", ";
+                    }
+                }
+                setBookAuthors(authorsStr);
+            } else {
+                setBookAuthors(authors[0]);
+            }
+        }
 
-            setCoverURL(json.items[0].volumeInfo.imageLinks.thumbnail);
-            setBookTitle(json.items[0].volumeInfo.title);
-            setBookAuthors(json.items[0].volumeInfo.authors);
-            
-            let avgRating = json.items[0].volumeInfo.averageRating;
-            if(avgRating) {
-                setRating(json.items[0].volumeInfo.averageRating);
+        const func = async () => {
+            let response = await fetch(`${consts.baseUrl}books/v1/volumes/${id}`, {method: "GET"});
+            let json = await response.json(); 
+
+            if(json.volumeInfo == undefined) {
+                response = await fetch(`${consts.baseUrl}books/v1/volumes?q=isbn:${id}`, {method: "GET"});
+                json = await response.json();
+                type = "isbn"
             }
             
-            setIsLoaded(true);
+            if(type == "isbn") {
+                setCoverURL(json.items[0].volumeInfo.imageLinks.thumbnail);
+                setBookTitle(json.items[0].volumeInfo.title);
+                getBookAuthors(json.items[0].volumeInfo.authors);
+                
+                let avgRating = json.items[0].volumeInfo.averageRating;
+                if(avgRating) {
+                    setRating(json.items[0].volumeInfo.averageRating);
+                }
+                
+                setIsLoaded(true);
+            }
+            else if(type == "id"){
+                setCoverURL(json.volumeInfo.imageLinks.thumbnail);
+                setBookTitle(json.volumeInfo.title);
+                getBookAuthors(json.volumeInfo.authors);
+
+                let avgRating = json.volumeInfo.averageRating;
+                if(avgRating) {
+                    setRating(json.volumeInfo.averageRating);
+                }
+
+                setIsLoaded(true);
+            }
         }
 
         func();
@@ -37,22 +75,22 @@ const BookTile = ({ isbn13 }) => {
     return ( isLoaded && 
             <View style={styles.bookTile}>
                 <TouchableOpacity activeOpacity={0.9} onPress={() => {
-                    navigation.navigate("Book", {isbn13: isbn13});
+                    navigation.navigate("Book", {id: id});
                 }}>
-                    <RemoteImage uri={coverURL} desiredWidth={130}></RemoteImage>
+                    <View style={{minHeight: 200}}><RemoteImage style={{ }} uri={coverURL} desiredWidth={130}></RemoteImage></View>
                 </TouchableOpacity>
                 
                 <View style={styles.innerView}>
                     <CustomText 
+                        numberOfLines={2}
                         style={styles.header} 
                         text={bookTitle}
                         weight="medium"
                     ></CustomText>
 
-                    {bookAuthors.map((element, id) => {
-                        return <CustomText key={id} style={styles.authors} text={element} size={12}/>
-                    })}
-                    
+                    {bookAuthors == undefined ? <CustomText text={"authors not stated"}/> : <CustomText style={styles.authors} 
+                        text={bookAuthors} size={12} numberOfLines={2}/>}
+
                     <CustomText style={styles.margins} text={rating }/>
                 </View>
                 <AddToLibrary align={"flex-start"}/>
@@ -69,7 +107,7 @@ const styles = StyleSheet.create({
     },
     bookTile: {
         flex: 1,
-        width: "49%",
+        maxWidth: "49%",
         textAlign: 'left',
         marginVertical: 15,
         height: 330,
@@ -77,7 +115,7 @@ const styles = StyleSheet.create({
     innerView: {
         flex: 1,
         alignContent: 'flex-end',
-        justifyContent: "space-between",
+        justifyContent: "space-around",
         position: 'relative',
         maxWidth: 140,
     },

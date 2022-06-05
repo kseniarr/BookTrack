@@ -12,7 +12,6 @@ import consts from '../config/consts';
 const SplashScreen = () => {
 
     const [email, setEmail] = useState('');
-    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const { context, setContext } = useContext(AppStateContext);
 
@@ -35,7 +34,6 @@ const SplashScreen = () => {
                 const user = userCredentials.user;
 
                 db.collection("user").doc(auth.currentUser?.uid).get().then(doc => {
-                    console.log(doc.data().username);
                     return doc.data().username;
                 }).then(data => setContext(data));
 

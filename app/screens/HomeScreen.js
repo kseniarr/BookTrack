@@ -5,20 +5,21 @@ import consts from '../config/consts'
 import colors from '../config/colors'
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import { TextInput } from 'react-native-gesture-handler'
+import CustomText from '../components/CustomText'
 
 const HomeScreen = () => {
-    const nytApiKey = "FFfJWvHZLXNGlVX8SRPICahCCtedaJT2";
     const [popularBooks, setPopularBooks] = useState(null);
-    const [popularISBNS, setPopularISBNS] = useState([{element: "9780141036144"}]);
+    const [popularISBNS, setPopularISBNS] = useState([{ element: "9780141036144" }]);
     const [isbns, setIsbns] = useState(null);
     const [input, setInput] = useState("");
     const [header, setHeader] = useState("Popular Books");
     const [isInputSet, setIsInputSet] = useState(false);
+    const [loadingState, setLoadingState] = useState("")
 
     // ----------   TEMPORARY COMMENTED OUT  ----------
 
     // useEffect(() => {
-    //     fetch('https://api.nytimes.com/svc/books/v3/lists.json?list-name=hardcover-fiction&api-key=' + nytApiKey,
+    //     fetch('https://api.nytimes.com/svc/books/v3/lists.json?list-name=hardcover-fiction&api-key=' + consts.nytApiKey,
     //         { method: 'get', })
     //         .then(response => { return response.json(); })
     //         .then(json => {
@@ -42,33 +43,75 @@ const HomeScreen = () => {
 
     // ----------   TEMPORARY COMMENTED OUT  ----------
 
+    let descriptionsId = [];
+
     const handleSubmit = async () => {
+        setIsbns(null);
+        setLoadingState(consts.loadingStates.LOADING);
+
+        const checkIfDescription = async (id) => {
+            let type = "id";
+            let response = await fetch(`${consts.baseUrl}books/v1/volumes/${id}`, {method: "GET"});
+            let json = await response.json(); 
+
+            if(json.volumeInfo == undefined) {
+                response = await fetch(`${consts.baseUrl}books/v1/volumes?q=isbn:${id}`, {method: "GET"});
+                json = await response.json();
+                type = "isbn"
+            }
+
+            if(type == "isbn") {
+                let description = json.items[0].volumeInfo.description;
+                let imageLinks = json.items[0].volumeInfo.imageLinks;
+
+                if(description && imageLinks) {
+                    descriptionsId.push(id);
+                }
+            }
+            else if (type == "id") {
+                let description = json.volumeInfo.description;
+                let imageLinks = json.volumeInfo.imageLinks;
+                if(description && imageLinks) {
+                    descriptionsId.push(id);
+                }
+            }
+        }
         const loadData = async () => {
-            let response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${input}`,
-                { method: "GET" }).then(response => response.json());
+            let response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${input}&maxResults=10`,
+                { method: "GET" });
+            response = (response.status === 200) ? await response.json() : null;
 
-            setIsbns(response?.items?.filter((element) => {
-                if (element.volumeInfo.imageLinks == undefined || (
-                    !element.volumeInfo.industryIdentifiers[0].type.includes("ISBN")
-                    || !element.volumeInfo.industryIdentifiers[1].type.includes("ISBN"))) return false;
-                else return true;
-            }).map(element => {
-                let isbn = element.volumeInfo.industryIdentifiers[1]?.identifier;
-                if (isbn == undefined) {
-                    isbn = element.volumeInfo.industryIdentifiers[0]?.identifier
+            let ids = response?.items?.map((element) => {
+                if(element.volumeInfo.industryIdentifiers) {
+                    if(element.volumeInfo.industryIdentifiers[0] && element.volumeInfo.industryIdentifiers[0].type.includes("ISBN")) {
+                        return element.volumeInfo.industryIdentifiers[0].identifier;
+                    }
+                    else if(element.volumeInfo.industryIdentifiers[1] && element.volumeInfo.industryIdentifiers[1].type.includes("ISBN")) {
+                        return element.volumeInfo.industryIdentifiers[1].identifier;
+                    }
                 }
 
+                return element.id;
+            });
+
+            for(let i = 0; i < ids.length; i++) {
+                await checkIfDescription(ids[i]);
+            }
+
+            setIsbns(descriptionsId.map((element) => {
                 return {
-                    element: isbn
+                    element: element
                 }
-            }));
+            }))
+
+            setLoadingState(consts.loadingStates.SUCCESS);
         }
 
         loadData();
         setHeader(input);
         setIsInputSet(true);
     }
-    
+
     return (
         <View style={styles.container}>
             <View>
@@ -93,7 +136,6 @@ const HomeScreen = () => {
                             <Ionicons
                                 onPress={() => {
                                     setInput("");
-                                    console.log("onClick");
                                     setIsInputSet(false);
                                     setHeader("Popular Books");
                                 }}
@@ -105,6 +147,7 @@ const HomeScreen = () => {
                 </SafeAreaView>
             </View>
             <BookResult text={header} data={isInputSet ? isbns : popularISBNS}></BookResult>
+            {loadingState == consts.loadingStates.LOADING && <View style={{alignItems: 'center', flex: 1,}}><CustomText text={"Loading..."}/></View>}
         </View>
     )
 }

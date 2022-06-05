@@ -12,7 +12,7 @@ import CustomButton from '../components/CustomButton';
 
 const BookScreen = ({ route }) => {
     const navigation = useNavigation();
-    const { isbn13 } = route.params;
+    const { id } = route.params;
     const [coverURL, setCoverURL] = useState();
     const [bookTitle, setBookTitle] = useState();
     const [bookAuthors, setBookAuthors] = useState([]);
@@ -28,42 +28,121 @@ const BookScreen = ({ route }) => {
     const [publisher, setPublisher] = useState("not stated");
     const [categories, setCategories] = useState(null);
     const [description, setDescription] = useState("No description provided");
+    const [ISBN, setISBN] = useState("Not stated");
+    let type = "id";
+
+    console.log(id);
 
     useEffect(() => {
+        const getCategories = (categories) => {
+            let arr = [];
+            for(let i = 0; i < categories.length; i++) {
+                let tmp = categories[i].split(/&|,|\//);
+                for(let j = 0; j < tmp.length; j++) {
+                    arr.push(tmp[j].trim());
+                }
+            }
+            setCategories(arr);
+        }
+
+        const getBookAuthors = (authors) => {
+            if(authors.length > 1) {
+                let authorsStr = "";
+                for(let i = 0; i < authors.length; i++) {
+                    if(i == authors.length - 1) {
+                        authorsStr += authors[i];
+                    } else {
+                        authorsStr += authors[i] + ", ";
+                    }
+                }
+                setBookAuthors(authorsStr);
+            } else {
+                setBookAuthors(authors[0]);
+            }
+        }
+
         const func = async () => {
-            const response = await fetch("https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn13, { method: "GET" })
-            const json = await response.json();
+            let response = await fetch(`${consts.baseUrl}books/v1/volumes/${id}`, { method: "GET" });
+            let json = await response.json();
 
-            setCoverURL(json.items[0].volumeInfo.imageLinks.thumbnail);
-            setBookTitle(json.items[0].volumeInfo.title);
-            setBookAuthors(json.items[0].volumeInfo.authors);
-
-            if (json.items[0].volumeInfo.pageCount) {
-                setPageCount(json.items[0].volumeInfo.pageCount);
+            if (json.volumeInfo == undefined) {
+                response = await fetch(`${consts.baseUrl}books/v1/volumes?q=isbn:${id}`, { method: "GET" });
+                json = await response.json();
+                type = "isbn"
             }
 
-            if (json.items[0].volumeInfo.publishedDate) {
-                setPublishedDate(json.items[0].volumeInfo.publishedDate);
-            }
+            if (type == "isbn") {
+                setCoverURL(json.items[0].volumeInfo.imageLinks.thumbnail);
+                setBookTitle(json.items[0].volumeInfo.title);
+                getBookAuthors(json.items[0].volumeInfo.authors);
 
-            if (json.items[0].volumeInfo.publisher) {
-                setPublisher(json.items[0].volumeInfo.publisher);
-            }
+                if (json.items[0].volumeInfo.pageCount) {
+                    setPageCount(json.items[0].volumeInfo.pageCount);
+                }
 
-            if (json.items[0].volumeInfo.averageRating) {
-                setRating(json.items[0].volumeInfo.averageRating);
-                setRatingsCount(json.items[0].volumeInfo.ratingsCount);
-            }
+                if (json.items[0].volumeInfo.publishedDate) {
+                    setPublishedDate(json.items[0].volumeInfo.publishedDate);
+                }
 
-            if (json.items[0].volumeInfo.categories) {
-                setCategories(json.items[0].volumeInfo.categories);
-            }
+                if (json.items[0].volumeInfo.publisher) {
+                    setPublisher(json.items[0].volumeInfo.publisher);
+                }
 
-            if (json.items[0].volumeInfo.description) {
-                setDescription(json.items[0].volumeInfo.description);
-            }
+                if (json.items[0].volumeInfo.averageRating) {
+                    setRating(json.items[0].volumeInfo.averageRating);
+                    setRatingsCount(json.items[0].volumeInfo.ratingsCount);
+                }
 
-            setIsLoaded(true);
+                if (json.items[0].volumeInfo.categories) {
+                    getCategories(json.items[0].volumeInfo.categories);
+                }
+
+                if (json.items[0].volumeInfo.description) {
+                    setDescription(json.items[0].volumeInfo.description);
+                }
+
+                setISBN(id);
+
+                setIsLoaded(true);
+            }
+            else if (type == "id") {
+                if(json.volumeInfo.imageLinks.thumbnail) {
+                    setCoverURL(json.volumeInfo.imageLinks.thumbnail);
+                }
+                else if(json.volumeInfo.imageLinks.smallThumbnail) {
+                    setCoverURL(json.volumeInfo.imageLinks.smallThumbnail);
+                }
+
+                setBookTitle(json.volumeInfo.title);
+                getBookAuthors(json.volumeInfo.authors);
+
+                if (json.volumeInfo.pageCount) {
+                    setPageCount(json.volumeInfo.pageCount);
+                }
+
+                if (json.volumeInfo.publishedDate) {
+                    setPublishedDate(json.volumeInfo.publishedDate);
+                }
+
+                if (json.volumeInfo.publisher) {
+                    setPublisher(json.volumeInfo.publisher);
+                }
+
+                if (json.volumeInfo.averageRating) {
+                    setRating(json.volumeInfo.averageRating);
+                    setRatingsCount(json.volumeInfo.ratingsCount);
+                }
+
+                if (json.volumeInfo.categories) {
+                    getCategories(json.volumeInfo.categories);
+                }
+
+                if (json.volumeInfo.description) {
+                    setDescription(json.volumeInfo.description);
+                }
+
+                setIsLoaded(true);
+            }
         }
 
         func();
@@ -103,12 +182,15 @@ const BookScreen = ({ route }) => {
                                 textShadowColor={"#2a302f"}
                             ></CustomText>
 
-                            <View style={{ marginTop: 5 }}>{bookAuthors.map((element, id) => {
-                                return <CustomText key={id} style={styles.authors} text={element} weight="medium"
-                                    size={16} align={"center"} color={colors.white}
-                                    textShadowOffset={{ width: 1, height: 1 }}
-                                    textShadowRadius={5} textShadowColor={"#2a302f"} />
-                            })}</View>
+                            <View style={{ marginTop: 5 }}>{bookAuthors == undefined ? <CustomText text={"authors not stated"} style={styles.authors} weight="medium"
+                                size={16} align={"center"} color={colors.white}
+                                textShadowOffset={{ width: 1, height: 1 }}
+                                textShadowRadius={5} textShadowColor={"#2a302f"} /> :
+                                <CustomText style={styles.authors} text={bookAuthors} weight="medium"
+                                        size={16} align={"center"} color={colors.white}
+                                        textShadowOffset={{ width: 1, height: 1 }}
+                                        textShadowRadius={5} textShadowColor={"#2a302f"}/>
+                            }</View>
 
                             <View style={styles.rating}>
                                 <CustomText text={rating} align={"center"} color={colors.white} weight="medium"
@@ -151,7 +233,7 @@ const BookScreen = ({ route }) => {
                                         textShadowRadius={5} textShadowColor={"#161a19"} />
                                 </View>
                                 <View style={styles.statictic}>
-                                    <CustomText text={"ISBN: " + isbn13} color={colors.white}
+                                    <CustomText text={"ISBN: " + ISBN} color={colors.white}
                                         textShadowOffset={{ width: 1, height: 1 }}
                                         textShadowRadius={5} textShadowColor={"#161a19"} />
                                 </View>
@@ -228,6 +310,9 @@ const styles = StyleSheet.create({
     },
     categories: {
         marginVertical: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        alignItems: 'center'
     },
     category: {
         backgroundColor: colors.white,

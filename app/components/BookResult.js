@@ -18,7 +18,7 @@ const BookResult = ({text, data }) => {
                     return (<BookTile 
                         style={styles.bookView}
                         key={ element.item.element } 
-                        isbn13={ element.item.element }>
+                        id={ element.item.element }>
                     </BookTile>)}
                 }
             ></FlatList>

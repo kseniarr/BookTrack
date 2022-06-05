@@ -12,6 +12,7 @@ const RemoteImage = ({uri, desiredWidth, alignSelf}) => {
         <Image
             resizeMethod='scale'
             source={{uri}}
+            defaultSource={require("./../assets/images/image-default.jpg")}
             style={{
                 borderWidth: 1,
                 width: desiredWidth,

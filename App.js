@@ -28,7 +28,7 @@ export default function App() {
     }
 
 
-    LogBox.ignoreLogs(['expo-app-loading', "AsyncStorage"]); // Ignore log notification by message
+    LogBox.ignoreLogs(['expo-app-loading', "AsyncStorage", "ViewPropTypes"]); // Ignore log notification by message
     // LogBox.ignoreAllLogs();//Ignore all log notifications
 
     return (

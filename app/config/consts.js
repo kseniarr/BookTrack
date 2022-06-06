@@ -5,6 +5,7 @@ export default {
     nytApiKey: "FFfJWvHZLXNGlVX8SRPICahCCtedaJT2",
     googleBooksApiKey: "AIzaSyCQgzhEKHD9q3-UREQGAg3W77KUf898Nuw",
     loadingStates: {
+        "INITIAL": "INITIAL",
         "SUCCESS": "SUCCESS",
         "ERROR": "ERROR",
         "LOADING": "LOADING",

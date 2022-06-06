@@ -43,7 +43,6 @@ const MainContainer = () => {
                     padding: 10,
                     height: 70
                 },
-                tabBarHideOnKeyboard: "false",
             })}>
             <Tab.Screen options={{ headerShown: false }} name={homeName} component={HomeScreen} />
             <Tab.Screen options={{ headerShown: false }} name={profileName} component={ProfileScreen} />

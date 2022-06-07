@@ -44,11 +44,6 @@ const SettingsScreen = () => {
                         style={[styles.input,
                         { fontFamily: "Montserrat-Regular" }
                         ]}
-                        onChangeText={(text) => {
-                            setUsername(text);
-                            setContext(text);
-                        }}
-                        onSubmitEditing={() => { }}
                         value={username}
                     ></TextInput>
                 </View>

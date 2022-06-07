@@ -32,12 +32,11 @@ const SplashScreen = () => {
             .signInWithEmailAndPassword(email, password)
             .then(userCredentials => {
                 const user = userCredentials.user;
+                const uid = auth.currentUser?.uid;
 
                 db.collection("user").doc(auth.currentUser?.uid).get().then(doc => {
                     return doc.data().username;
-                }).then(data => setContext(data));
-
-                console.log('Logged in with:', user.email);
+                }).then(data => setContext({username: data, uid: uid}));
             })
             .catch(error => alert(error.message))
     }

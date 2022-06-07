@@ -31,8 +31,13 @@ const SignupScreen = () => {
             .createUserWithEmailAndPassword(email, password)
             .then(userCredentials => {
                 const user = userCredentials.user;
-                console.log('Registered with:', user.email);
-                setContext(username);
+                setContext({username: username, uid: user.uid});
+
+                db.collection("bookshelves").doc(user.uid).set({
+                    read: [],
+                    toRead: [], 
+                    dnf: [],
+                });
 
                 return db.collection("user").doc(user.uid).set({
                     username: username

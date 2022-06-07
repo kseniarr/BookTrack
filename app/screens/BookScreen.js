@@ -31,8 +31,6 @@ const BookScreen = ({ route }) => {
     const [ISBN, setISBN] = useState("Not stated");
     let type = "id";
 
-    console.log(id);
-
     useEffect(() => {
         const getCategories = (categories) => {
             let arr = [];
@@ -167,7 +165,7 @@ const BookScreen = ({ route }) => {
                             </Path>
                         </Svg>
                     </View>
-                    <View style={{ backgroundColor: "#0d241f", opacity: 0.25, width: "100%", height: "100%", position: 'absolute' }}></View>
+                    <View style={{ backgroundColor: colors.secondaryColor, opacity: 0.25, width: "100%", height: "100%", position: 'absolute' }}></View>
                     <View style={[styles.padding]}>
                         <View style={styles.image}><RemoteImage uri={coverURL} desiredWidth={180} alignSelf={"center"}></RemoteImage></View>
                         <View style={[styles.innerView, styles.header]} >

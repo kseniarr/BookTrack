@@ -93,7 +93,7 @@ const BookTile = ({ id }) => {
 
                     <CustomText style={styles.margins} text={rating }/>
                 </View>
-                <AddToLibrary align={"flex-start"}/>
+                <AddToLibrary align={"flex-start"} bookId={id}/>
         </View>
     )
 }

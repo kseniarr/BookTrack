@@ -1,11 +1,14 @@
-import { StyleSheet, View, ScrollView } from 'react-native'
-import React, { useContext, useState } from 'react'
+import { StyleSheet, View, ScrollView, FlatList, TouchableOpacity } from 'react-native'
+import React, { useContext, useEffect, useState } from 'react'
 import CustomText from '../components/CustomText'
 import AppStateContext from '../components/AppStateContext';
 import CustomButton from '../components/CustomButton';
 import consts from '../config/consts';
 import Avatar from '../components/Avatar';
 import colors from '../config/colors';
+import { db } from '../../firebase'
+import RemoteImage from "./../components/RemoteImage";
+import { useNavigation } from '@react-navigation/core';
 
 const ProfileScreen = () => {
     const { context, setContext } = useContext(AppStateContext);
@@ -14,12 +17,99 @@ const ProfileScreen = () => {
     const [dnf, setDnf] = useState(0);
     const [avgRating, setAvgRating] = useState(0);
     const [books, setBooks] = useState(null);
+    const [recentBooks, setRecentBooks] = useState(null);
     const [reviews, setReviews] = useState(null);
     const [yearlyGoal, setYearlyGoal] = useState(null);
+
+    const navigation = useNavigation();
 
     const changeYearlyGoal = () => {
 
     }
+
+    useEffect(() => {
+        setRecentBooks(null);
+        const func = async () => {
+            const snapshot = await db.collection('bookshelves').doc(context.uid).get();
+            let numRead = snapshot.data().read.length;
+            let numToRead = snapshot.data().toRead.length;
+            let numDnf = snapshot.data().dnf.length;
+            let reviews = [];
+            let numRatings = 0;
+            let sumRatings = 0;
+
+            setBooks(snapshot.data().read);
+            let recent = null;
+            let recentUrls = [];
+
+            if (snapshot.data().read.length > 0) {
+                if (snapshot.data().read.length <= 7) {
+                    recent = snapshot.data().read;
+                } else {
+                    recent = snapshot.data().read.slice(-7);
+                }
+
+                recent.reverse();
+
+                for (let i = 0; i < recent.length; i++) {
+                    let response = await fetch(`${consts.baseUrl}books/v1/volumes/${recent[i].id}`, { method: "GET" });
+                    let json = await response.json();
+                    let type = "id";
+
+                    if (json.volumeInfo == undefined) {
+                        response = await fetch(`${consts.baseUrl}books/v1/volumes?q=isbn:${recent[i].id}`, { method: "GET" });
+                        json = await response.json();
+                        type = "isbn"
+                    }
+
+                    if (type == "id") {
+                        if (json.volumeInfo.imageLinks.thumbnail) {
+                            recentUrls.push({
+                                element: json.volumeInfo.imageLinks.thumbnail, 
+                                id: recent[i].id
+                            });
+                        }
+                        else if (json.volumeInfo.imageLinks.smallThumbnail) {
+                            recentUrls.push({
+                                element: json.volumeInfo.imageLinks.smallThumbnail, 
+                                id: recent[i].id
+                            });
+                        }
+                    } else if (type == "isbn") {
+                        recentUrls.push({
+                            element: json.items[0].volumeInfo.imageLinks.thumbnail, 
+                            id: recent[i].id
+                        });
+                    }
+                }
+                setRecentBooks(recentUrls);
+            }
+
+            snapshot.data().read.map((element) => {
+                if (element.review && element.review != "") {
+                    reviews.push({
+                        id: element.id,
+                        rating: element.rating,
+                        review: element.review,
+                    });
+                }
+
+                if (element.rating > 0) {
+                    numRatings++;
+                    sumRatings += element.rating;
+                }
+            });
+
+            setRead(numRead);
+            setToRead(numToRead);
+            setDnf(numDnf);
+            setReviews(reviews);
+            setAvgRating(numRatings > 0 ? Math.round(sumRatings / numRatings * 100) / 100 : 0);
+        }
+
+        func();
+
+    }, []);
 
     return (
         <View>
@@ -36,13 +126,28 @@ const ProfileScreen = () => {
                     </View>
                     <View style={[styles.statictic, styles.alignLeft]}>
                         <CustomText text={"average rating: " + avgRating} />
-                        <CustomText text={"number of reviews: " + (reviews == null ? 0 : reviews.count)} />
+                        <CustomText text={"number of reviews: " + (reviews == null ? 0 : reviews.length)} />
                     </View>
                 </View>
                 <View style={styles.userData}>
                     <CustomText text={"Recent books"} size={24} />
-                    {books == null ? <View style={styles.recentBooks}><CustomText text="No books to show!" /></View> : <View style={styles.recentBooks}>
-                        <CustomText text={"Favorite books"} />
+                    {recentBooks == null ? <View style={styles.recentBooks}><CustomText text="No books to show!" /></View> : <View style={styles.recentBooksContainer}>
+                        <FlatList contentContainerStyle={styles.recentBooks}
+                            data={recentBooks}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            renderItem={(element) => {
+                                console.log(element);
+                                return <TouchableOpacity key={element.item.id} activeOpacity={0.9} onPress={() => {
+                                    navigation.navigate("Book", {id: element.item.id});
+                                }}>
+                                    <View style={{marginHorizontal: 5}}>
+                                        <RemoteImage desiredWidth={100} alignSelf={"center"} uri={element.item.element} />
+                                    </View>
+                                </TouchableOpacity>
+
+                            }}
+                        />
                     </View>}
                 </View>
                 <View style={styles.userData}>
@@ -55,7 +160,6 @@ const ProfileScreen = () => {
                     </View>}
                 </View>
                 {books != null && <View style={styles.userData}>
-
                 </View>}
             </ScrollView>
         </View>
@@ -93,10 +197,10 @@ const styles = StyleSheet.create({
     alignLeft: {
         alignItems: "flex-start",
     },
-    recentBooks: {
-        height: 200,
-        width: "90%",
-        borderBottomWidth: 2,
+    recentBooksContainer: {
+        height: 165,
+        width: "100%",
+        borderBottomWidth: 5,
         borderBottomColor: colors.black,
         borderBottomEndRadius: consts.borderRadius,
         borderBottomStartRadius: consts.borderRadius,
@@ -104,6 +208,10 @@ const styles = StyleSheet.create({
         borderBottomRightRadius: consts.borderRadius,
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 20,
+    },
+    recentBooks: {
+        alignItems: 'baseline'
     }
 });
 

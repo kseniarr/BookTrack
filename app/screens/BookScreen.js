@@ -9,6 +9,7 @@ import consts from '../config/consts';
 import AddToLibrary from '../components/AddToLibrary';
 import Svg, { Path } from 'react-native-svg';
 import CustomButton from '../components/CustomButton';
+import { db } from '../../firebase';
 
 const BookScreen = ({ route }) => {
     const navigation = useNavigation();
@@ -18,7 +19,7 @@ const BookScreen = ({ route }) => {
     const [bookAuthors, setBookAuthors] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [rating, setRating] = useState(4.5);
-    const [ratingsCount, setRatingsCount] = useState(1);
+    const [ratingsCount, setRatingsCount] = useState(0);
     const [reviewsCount, setReviewsCount] = useState(0);
     const [read, setRead] = useState(0);
     const [toRead, setToRead] = useState(0);
@@ -59,7 +60,11 @@ const BookScreen = ({ route }) => {
             }
         }
 
+        let rating = 0; 
+        let numRatings = 0;
+
         const func = async () => {
+            fromDB();
             let response = await fetch(`${consts.baseUrl}books/v1/volumes/${id}`, { method: "GET" });
             let json = await response.json();
 
@@ -87,8 +92,8 @@ const BookScreen = ({ route }) => {
                 }
 
                 if (json.items[0].volumeInfo.averageRating) {
-                    setRating(json.items[0].volumeInfo.averageRating);
-                    setRatingsCount(json.items[0].volumeInfo.ratingsCount);
+                    rating += json.items[0].volumeInfo.averageRating;
+                    numRatings += json.items[0].volumeInfo.ratingsCount;
                 }
 
                 if (json.items[0].volumeInfo.categories) {
@@ -127,8 +132,8 @@ const BookScreen = ({ route }) => {
                 }
 
                 if (json.volumeInfo.averageRating) {
-                    setRating(json.volumeInfo.averageRating);
-                    setRatingsCount(json.volumeInfo.ratingsCount);
+                    rating += json.volumeInfo.averageRating;
+                    numRatings += json.volumeInfo.ratingsCount;
                 }
 
                 if (json.volumeInfo.categories) {
@@ -141,6 +146,46 @@ const BookScreen = ({ route }) => {
 
                 setIsLoaded(true);
             }
+        }
+
+        const fromDB = async() =>  {
+            const snapshot = await db.collection('bookshelves').get();
+            let numRead = 0;
+            let numToRead = 0;
+            let numDnf = 0;
+            let numReviews = 0;
+
+            snapshot.docs.map(doc => {
+                let read = doc.data().read;
+                let toRead = doc.data().toRead;
+                let dnf = doc.data().dnf;
+                for(let i = 0; i < read.length; i++) {
+                    if(read[i].id == id) {
+                        numRead++;
+                        rating += read[i].rating;
+                        if(read[i].rating != 0) {
+                            numRatings += 1;
+                        }
+                    }
+                }
+                for(let i = 0; i < toRead.length; i++) {
+                    if(toRead[i].id == id) {
+                        numToRead++;
+                    }
+                }
+                for(let i = 0; i < dnf.length; i++) {
+                    if(dnf[i].id == id) {
+                        numDnf++;
+                    }
+                }
+                setRating(numRatings == 0 ? 0 : rating / numRatings);
+                setRatingsCount(numRatings);
+            });
+
+            setRead(numRead);
+            setToRead(numToRead);
+            setDnf(numDnf);
+            setReviewsCount(numReviews);
         }
 
         func();

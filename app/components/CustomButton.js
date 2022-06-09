@@ -5,10 +5,17 @@ import consts from '../config/consts'
 import { TouchableOpacity } from 'react-native'
 import CustomText from "./../components/CustomText"
 
-const CustomButton = ({ text, onPress, label = "Button", size = 14, weight = "regular", width, backgroundColor = colors.primaryColor, align }) => {
+const CustomButton = ({ text, onPress, border = false, label = "Button", size = 14, weight = "regular", width, backgroundColor = colors.primaryColor, align }) => {
     return (
         <TouchableOpacity 
-                style={[styles.btn, {width: width, backgroundColor: backgroundColor}]}
+                style={[styles.btn, {width: width, backgroundColor: backgroundColor}, 
+                border == true && {
+                    borderColor: colors.primaryColor,
+                    borderWidth: 1,
+                    borderRadius: consts.borderRadius * 4,
+                    paddingVertical: 5,
+                    paddingHorizontal: 15,
+                }]}
                 activeOpacity={0.8}
                 accessibilityLabel={label}
                 onPress={onPress}>

@@ -10,6 +10,7 @@ import RemoteImage from "./../components/RemoteImage";
 import { useNavigation } from '@react-navigation/core';
 import Loader from '../components/Loader';
 import YearlyGoal from '../components/YearlyGoal';
+import Library from '../components/Library';
 
 const ProfileScreen = () => {
     const { context, setContext } = useContext(AppStateContext);
@@ -41,7 +42,7 @@ const ProfileScreen = () => {
             let numRatings = 0;
             let sumRatings = 0;
 
-            setBooks(snapshot.data().read);
+            setBooks(snapshot.data());
             let recent = null;
             let recentUrls = [];
 
@@ -108,7 +109,6 @@ const ProfileScreen = () => {
             setDnf(numDnf);
             setReviews(reviews);
             setAvgRating(numRatings > 0 ? Math.round(sumRatings / numRatings * 100) / 100 : 0);
-
             setIsLoaded(consts.loadingStates.SUCCESS);
         }
 
@@ -159,12 +159,11 @@ const ProfileScreen = () => {
                         <YearlyGoal />
                     </View>
                     {books != null && <View style={styles.userData}>
+                        <Library books={books} />
                     </View>}
                 </ScrollView>
             </View>}
         </>
-
-
     )
 }
 
@@ -172,6 +171,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
+        backgroundColor: colors.white,
     },
     scrollContainer: {
         flexGrow: 1,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
     },
     recentBooksContainer: {
-        height: 165,
+        height: 163,
         width: "100%",
         borderBottomWidth: 5,
         borderBottomColor: colors.black,

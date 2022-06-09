@@ -40,7 +40,8 @@ const SignupScreen = () => {
                 });
 
                 return db.collection("user").doc(user.uid).set({
-                    username: username
+                    username: username,
+                    goal: 0,
                 });
             })
             .catch(error => alert(error.message))

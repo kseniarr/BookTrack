@@ -22,6 +22,7 @@ const ProfileScreen = () => {
     const [recentBooks, setRecentBooks] = useState(null);
     const [reviews, setReviews] = useState(null);
     const [isLoaded, setIsLoaded] = useState(consts.loadingStates.INITIAL);
+    const [userImg, setUserImg] = useState("");
 
     const navigation = useNavigation();
     let snapshot = null;
@@ -116,6 +117,15 @@ const ProfileScreen = () => {
 
     }, [snapshot]);
 
+    useEffect(() => {
+        const func = async () => {
+            const data = await db.collection('user').doc(context.uid).get();
+            setUserImg(data.data().profileImg);
+        }
+
+        func();
+    }, [])
+
     return (
         <>
             {isLoaded == consts.loadingStates.LOADING && <View style={styles.loader}><Loader /></View>}
@@ -123,7 +133,7 @@ const ProfileScreen = () => {
                 <ScrollView contentContainerStyle={styles.scrollContainer}>
                     <View style={styles.userData}>
                         <View style={styles.header}>
-                            <Avatar />
+                            <Avatar image={userImg}/>
                             <View style={{ marginVertical: 8 }}><CustomText text={`${context.username}`} weight={"bold"} size={24} align="center" /></View>
                         </View>
                         <View style={[styles.statictic, styles.alignLeft]}>

@@ -2,11 +2,13 @@ import { StyleSheet, View } from 'react-native'
 import React from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import colors from '../config/colors'
+import RemoteImage from "./../components/RemoteImage"
 
-const Avatar = () => {
+const Avatar = ({image}) => {
     return (
         <View style={styles.avatar}>
-            <Ionicons name="person" style={{ fontSize: 100 }} color={colors.white}></Ionicons>
+            {!image && <Ionicons name="person" style={{ fontSize: 100 }} color={colors.white}></Ionicons>}
+            {image != null && image != undefined && <RemoteImage uri={image} desiredWidth={144} circle={true}/>}
         </View>
     )
 }

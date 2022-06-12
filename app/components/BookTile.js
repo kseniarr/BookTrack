@@ -1,5 +1,5 @@
 import { StyleSheet, View, TouchableOpacity } from 'react-native'
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import CustomText from './CustomText';
 import RemoteImage from './RemoteImage';
 import { useNavigation } from '@react-navigation/core';
@@ -7,14 +7,22 @@ import AddToLibrary from './AddToLibrary';
 import consts from '../config/consts';
 import StarRating from './StarRating';
 import CustomButton from './CustomButton';
-import AppStateContext from './AppStateContext';
+import Ionicons from 'react-native-vector-icons/Ionicons'
+import Modal from "react-native-modal"
+import colors from '../config/colors';
 
-const BookTile = ({ id, profile = false, userRating, removeBook }) => {
+const BookTile = ({ id, profile = false, userRating, shelf, removeBook, updateRating }) => {
     const [coverURL, setCoverURL] = useState();
     const [bookTitle, setBookTitle] = useState();
     const [bookAuthors, setBookAuthors] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [rating, setRating] = useState(4.5);
+    const [editable, setEditable] = useState(false);
+    const [totalStars, setTotalStars] = useState(0);
+
+    const changeTotal = (total) => {
+        setTotalStars(total);
+    }
 
     const navigation = useNavigation();
     let type = "id";
@@ -102,6 +110,22 @@ const BookTile = ({ id, profile = false, userRating, removeBook }) => {
             <AddToLibrary align={"flex-start"} bookId={id} />
         </View>
         }
+        {isLoaded && profile && editable && <Modal
+            isVisible={true}
+            onBackdropPress={() => setEditable(false)}
+            animationIn={"pulse"}
+            animationInTiming={300}
+            animationOutTiming={200}>
+            <View style={styles.centeredDiv}>
+                <View style={styles.modalView}>
+                    <View style={{ marginBottom: 10 }}><CustomText text={"Add to library"} weight={"medium"} size={20} /></View>
+                    <StarRating total={changeTotal} />
+                    <CustomButton text="Save" onPress={async () => {
+                        updateRating(shelf, id, totalStars);
+                    }} />
+                </View>
+            </View>
+        </Modal>}
         {isLoaded && profile && <View style={[styles.bookTileUser, {
             flexDirection: 'row',
             maxWidth: "100%",
@@ -139,10 +163,14 @@ const BookTile = ({ id, profile = false, userRating, removeBook }) => {
 
                 <View>
                     <CustomText text={`your rating (${userRating})`} size={12} />
-                    <StarRating rating={userRating} />
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <StarRating rating={userRating} />
+                        <TouchableOpacity style={{marginHorizontal: 5}} activeOpacity={0.7} onPress={setEditable}>
+                            <Ionicons name={"create-outline"} style={{fontSize: 20}}/>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-
-                <CustomButton text={"remove"} size={12}  onPress={removeBook} />
+                <CustomButton text={"remove"} size={12} onPress={removeBook} />
             </View>
         </View>}
     </>
@@ -183,5 +211,26 @@ const styles = StyleSheet.create({
     authors: {
         marginBottom: 5,
         fontSize: 12,
-    }
+    },
+    centeredView: {
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        height: "100%",
+    },
+    modalView: {
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "white",
+        borderRadius: consts.borderRadius * 5,
+        paddingVertical: 35,
+        paddingHorizontal: 50,
+        alignItems: "center",
+        shadowColor: colors.black,
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        zIndex: 100,
+    },
 })

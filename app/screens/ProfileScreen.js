@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/core';
 import Loader from '../components/Loader';
 import YearlyGoal from '../components/YearlyGoal';
 import Library from '../components/Library';
+import useRefresh from '../config/useRefresh';
 
 const ProfileScreen = () => {
     const { context, setContext } = useContext(AppStateContext);
@@ -23,7 +24,7 @@ const ProfileScreen = () => {
     const [reviews, setReviews] = useState(null);
     const [isLoaded, setIsLoaded] = useState(consts.loadingStates.INITIAL);
     const [userImg, setUserImg] = useState("");
-    const [changed, setChanged] = useState(0);
+    const {refresh, setRefresh} = useRefresh();
 
     const navigation = useNavigation();
     let snapshot = null;
@@ -55,37 +56,43 @@ const ProfileScreen = () => {
                     recent = snapshot.data().read.slice(-7);
                 }
 
-                recent.reverse();
+                recent.sort(function(x, y){
+                    return y.timestamp - x.timestamp;
+                });
 
                 for (let i = 0; i < recent.length; i++) {
                     let response = await fetch(`${consts.baseUrl}books/v1/volumes/${recent[i].id}`, { method: "GET" });
                     let json = await response.json();
                     let type = "id";
 
-                    if (json.volumeInfo == undefined) {
-                        response = await fetch(`${consts.baseUrl}books/v1/volumes?q=isbn:${recent[i].id}`, { method: "GET" });
-                        json = await response.json();
-                        type = "isbn"
-                    }
-
-                    if (type == "id") {
-                        if (json.volumeInfo.imageLinks.thumbnail) {
+                    if(json.error) {
+                        console.log(json.error.message);
+                    } else {
+                        if (json.volumeInfo == undefined) {
+                            response = await fetch(`${consts.baseUrl}books/v1/volumes?q=isbn:${recent[i].id}`, { method: "GET" });
+                            json = await response.json();
+                            type = "isbn"
+                        }
+    
+                        if (type == "id") {
+                            if (json.volumeInfo.imageLinks.thumbnail) {
+                                recentUrls.push({
+                                    element: json.volumeInfo.imageLinks.thumbnail,
+                                    id: recent[i].id
+                                });
+                            }
+                            else if (json.volumeInfo.imageLinks.smallThumbnail) {
+                                recentUrls.push({
+                                    element: json.volumeInfo.imageLinks.smallThumbnail,
+                                    id: recent[i].id
+                                });
+                            }
+                        } else if (type == "isbn") {
                             recentUrls.push({
-                                element: json.volumeInfo.imageLinks.thumbnail,
+                                element: json.items[0].volumeInfo.imageLinks.thumbnail,
                                 id: recent[i].id
                             });
                         }
-                        else if (json.volumeInfo.imageLinks.smallThumbnail) {
-                            recentUrls.push({
-                                element: json.volumeInfo.imageLinks.smallThumbnail,
-                                id: recent[i].id
-                            });
-                        }
-                    } else if (type == "isbn") {
-                        recentUrls.push({
-                            element: json.items[0].volumeInfo.imageLinks.thumbnail,
-                            id: recent[i].id
-                        });
                     }
                 }
                 setRecentBooks(recentUrls);
@@ -115,7 +122,7 @@ const ProfileScreen = () => {
         }
         func();
 
-    }, [snapshot, changed]);
+    }, [snapshot, refresh]);
 
     useEffect(() => {
         const func = async () => {
@@ -126,15 +133,33 @@ const ProfileScreen = () => {
         func();
     }, [])
 
-    const removeBook = async (shelf, id, userRating) => {
+    const removeBook = async (shelf, id) => {
+        const data = await db.collection('bookshelves').doc(context.uid).get();
+        let ind;
+        data.data()[shelf].forEach((element, elementID) => {
+            if(element.id == id) ind = elementID;
+        })
+
+        await db.collection('bookshelves').doc(context.uid).update({[shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind])});
+        setRefresh((prev) => prev + 1);
+    }
+
+    const updateRating = async (shelf, id, userRating) => {
         const data = await db.collection('bookshelves').doc(context.uid).get();
         let ind;
         data.data().read.forEach((element, elementID) => {
             if(element.id == id) ind = elementID;
         })
 
-        await db.collection('bookshelves').doc(context.uid).update({[shelf]: firebase.firestore.FieldValue.arrayRemove(books[shelf][ind])});
-        setChanged((prev) => prev + 1);
+        await db.collection('bookshelves').doc(context.uid).update({[shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind])});
+        await db.collection('bookshelves').doc(context.uid).update({[shelf]: firebase.firestore.FieldValue.arrayUnion({
+            id: data.data()[shelf][ind].id,
+            timestamp: data.data()[shelf][ind].timestamp,
+            rating: userRating,
+            review: data.data()[shelf][ind].review == undefined ? "" : data.data()[shelf][ind].review,
+        })});
+        
+        setRefresh((prev) => prev + 1);
     }
 
     return (
@@ -165,7 +190,7 @@ const ProfileScreen = () => {
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 renderItem={(element) => {
-                                    return <TouchableOpacity key={element.item.id} activeOpacity={0.9} onPress={() => {
+                                    return <TouchableOpacity key={element.item.id+"recent"} activeOpacity={0.9} onPress={() => {
                                         navigation.navigate("Book", { id: element.item.id });
                                     }}>
                                         <View style={{ marginHorizontal: 5 }}>
@@ -182,6 +207,7 @@ const ProfileScreen = () => {
                     {books != null && <View style={styles.userData}>
                         <Library books={books} 
                         removeBook = {removeBook}
+                        updateRating={updateRating}
                         />
                     </View>}
                 </ScrollView>

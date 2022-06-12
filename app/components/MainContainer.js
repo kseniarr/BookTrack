@@ -1,53 +1,51 @@
-import { StyleSheet } from 'react-native'
-import React from 'react'
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import Ionicons from 'react-native-vector-icons/Ionicons'
+import { StyleSheet, View } from 'react-native'
+import React, { useState } from 'react'
 import HomeScreen from '../screens/HomeScreen'
 import ProfileScreen from '../screens/ProfileScreen'
 import SettingsScreen from '../screens/SettingsScreen'
 import colors from '../config/colors'
+import TabBar from './TabBar'
 
 const homeName = "Home";
 const profileName = "Profile";
 const settingsName = "Settings";
 
-const Tab = createBottomTabNavigator();
-
 const MainContainer = () => {
+    const [currTab, setCurrTab] = useState(homeName);
+
     return (
-        <Tab.Navigator
-            initialRouteName={homeName}
-            screenOptions={({ route }) => ({
-                tabBarIcon: ({ focused, color, size }) => {
-                    let iconName;
-                    let rn = route.name;
-
-                    if (rn === homeName) {
-                        iconName = focused ? "home" : "home-outline"
-                    } else if (rn === profileName) {
-                        iconName = focused ? "person" : "person-outline"
-                    } else if (rn === settingsName) {
-                        iconName = focused ? "settings" : "settings-outline"
-                    }
-
-                    return <Ionicons name={iconName} size={size} color={color} />
-                },
-                tabBarActiveTintColor: colors.primaryColor,
-                tabBarInactiveTintColor: colors.grey,
-                tabBarLabelStyle: {
-                    paddingBottom: 10,
-                    fontSize: 10,
-                    fontFamily: "Montserrat-Regular",
-                },
-                tabBarStyle: {
-                    padding: 10,
-                    height: 70
-                },
-            })}>
-            <Tab.Screen options={{ headerShown: false }} name={homeName} component={HomeScreen} />
-            <Tab.Screen options={{ headerShown: false }} name={profileName} component={ProfileScreen} />
-            <Tab.Screen options={{ headerShown: false }} name={settingsName} component={SettingsScreen} />
-        </Tab.Navigator>);
+        <>
+            {currTab == homeName && <HomeScreen />}
+            {currTab == profileName && <ProfileScreen />}
+            {currTab == settingsName && <SettingsScreen />}
+            <View style={{
+                flexDirection: "row",
+                position: "absolute",
+                bottom: 0,
+                width: "100%",
+                backgroundColor: "white",
+                height: 80,
+                justifyContent: 'space-evenly',
+                alignItems: 'center',
+            }}>
+                <TabBar
+                    onPress={() => setCurrTab(homeName)}
+                    name={homeName}
+                    icon={currTab == homeName ? "home" : "home-outline"}
+                    color={currTab == homeName ? colors.primaryColor : colors.grey} />
+                <TabBar
+                    onPress={() => setCurrTab(profileName)}
+                    name={profileName}
+                    icon={currTab == profileName ? "person" : "person-outline"}
+                    color={currTab == profileName ? colors.primaryColor : colors.grey} />
+                <TabBar
+                    onPress={() => setCurrTab(settingsName)}
+                    name={settingsName}
+                    icon={currTab == settingsName ? "settings" : "settings-outline"}
+                    color={currTab == settingsName ? colors.primaryColor : colors.grey} />
+            </View>
+        </>
+    );
 }
 
 export default MainContainer

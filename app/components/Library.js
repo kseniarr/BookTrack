@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 import CustomText from './CustomText'
 import BookTile from './BookTile'
 
-const Library = ({ books }) => {
+const Library = ({ books, removeBook }) => {
     const [currShelf, setCurrShelf] = useState(0); // 0 - read (default), 1 - to read, 2 - dnf
 
     const chooseShelf = (id) => {
@@ -43,13 +43,30 @@ const Library = ({ books }) => {
                     currShelf == 2 && books.dnf.length == 0) && <View style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}><CustomText text="no books to show" align={"center"} /></View>}
                 <View style={{width: "100%"}}>
                 {currShelf == 0 && books.read.length > 0 && books.read.map((element) => {
-                    return <BookTile style={{width: "100%"}} key={element.id} id={element.id} userRating={element.rating} profile={true} />
+                    return <BookTile style={{width: "100%"}} 
+                                     key={element.id} 
+                                     id={element.id} 
+                                     userRating={element.rating} 
+                                     profile={true}
+                                     removeBook={() => removeBook("read", element.id, element.rating)}
+                                     />
                 })}
                 {currShelf == 1 && books.toRead.length > 0 && books.toRead.map((element) => {
-                    return <BookTile style={{width: "100%"}} key={element.id} id={element.id} userRating={element.rating} profile={true} />
+                    return <BookTile style={{width: "100%"}} 
+                                     key={element.id} 
+                                     id={element.id} 
+                                     userRating={element.rating} 
+                                     profile={true}
+                                     removeBook={() => removeBook("toRead", element.id, element.rating)}
+                                     />
                 })}
                 {currShelf == 2 && books.dnf.length > 0 && books.dnf.map((element) => {
-                    return <BookTile style={{width: "100%"}} key={element.id} id={element.id} userRating={element.rating} profile={true} />
+                    return <BookTile style={{width: "100%"}}
+                                     key={element.id} 
+                                     id={element.id} 
+                                     userRating={element.rating} 
+                                     profile={true}
+                                     removeBook={() => removeBook("dnf", element.id, element.rating)} />
                 })}
                 </View>
             </View>

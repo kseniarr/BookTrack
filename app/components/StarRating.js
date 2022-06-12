@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import CheckBox from 'expo-checkbox'
 import Star from './Star'
 
-const StarRating = ({ total, rating }) => {
+const StarRating = ({ total, rating = -1 }) => {
     const [isHalfSelected, setIsHalfSelected] = useState(false);
     const [selectedStar, setSelectedStar] = useState(-1);
     const [totalStars, setTotal] = useState(0);
@@ -59,7 +59,7 @@ const StarRating = ({ total, rating }) => {
                     style={styles.checkbox}
                 />
             </View>}
-            {rating && <View style={{ flexDirection: 'row' }}>
+            {rating != -1 && <View style={{ flexDirection: 'row' }}>
                 {Array.apply(null, Array(5)).map((element, id) => {
                     if (id + 1 <= Math.trunc(rating)) {
                         return <Star key={id} name="star" />

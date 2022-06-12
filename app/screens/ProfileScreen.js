@@ -5,7 +5,7 @@ import AppStateContext from '../components/AppStateContext';
 import consts from '../config/consts';
 import Avatar from '../components/Avatar';
 import colors from '../config/colors';
-import { db } from '../../firebase'
+import { db, firebase } from '../../firebase'
 import RemoteImage from "./../components/RemoteImage";
 import { useNavigation } from '@react-navigation/core';
 import Loader from '../components/Loader';
@@ -23,6 +23,7 @@ const ProfileScreen = () => {
     const [reviews, setReviews] = useState(null);
     const [isLoaded, setIsLoaded] = useState(consts.loadingStates.INITIAL);
     const [userImg, setUserImg] = useState("");
+    const [changed, setChanged] = useState(0);
 
     const navigation = useNavigation();
     let snapshot = null;
@@ -112,10 +113,9 @@ const ProfileScreen = () => {
             setAvgRating(numRatings > 0 ? Math.round(sumRatings / numRatings * 100) / 100 : 0);
             setIsLoaded(consts.loadingStates.SUCCESS);
         }
-
         func();
 
-    }, [snapshot]);
+    }, [snapshot, changed]);
 
     useEffect(() => {
         const func = async () => {
@@ -125,6 +125,17 @@ const ProfileScreen = () => {
 
         func();
     }, [])
+
+    const removeBook = async (shelf, id, userRating) => {
+        const data = await db.collection('bookshelves').doc(context.uid).get();
+        let ind;
+        data.data().read.forEach((element, elementID) => {
+            if(element.id == id) ind = elementID;
+        })
+
+        await db.collection('bookshelves').doc(context.uid).update({[shelf]: firebase.firestore.FieldValue.arrayRemove(books[shelf][ind])});
+        setChanged((prev) => prev + 1);
+    }
 
     return (
         <>
@@ -169,7 +180,9 @@ const ProfileScreen = () => {
                         <YearlyGoal />
                     </View>
                     {books != null && <View style={styles.userData}>
-                        <Library books={books} />
+                        <Library books={books} 
+                        removeBook = {removeBook}
+                        />
                     </View>}
                 </ScrollView>
             </View>}

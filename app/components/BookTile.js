@@ -1,5 +1,5 @@
 import { StyleSheet, View, TouchableOpacity } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import CustomText from './CustomText';
 import RemoteImage from './RemoteImage';
 import { useNavigation } from '@react-navigation/core';
@@ -7,8 +7,9 @@ import AddToLibrary from './AddToLibrary';
 import consts from '../config/consts';
 import StarRating from './StarRating';
 import CustomButton from './CustomButton';
+import AppStateContext from './AppStateContext';
 
-const BookTile = ({ id, profile = false, userRating }) => {
+const BookTile = ({ id, profile = false, userRating, removeBook }) => {
     const [coverURL, setCoverURL] = useState();
     const [bookTitle, setBookTitle] = useState();
     const [bookAuthors, setBookAuthors] = useState([]);
@@ -141,7 +142,7 @@ const BookTile = ({ id, profile = false, userRating }) => {
                     <StarRating rating={userRating} />
                 </View>
 
-                <CustomButton text={"remove"} size={12} />
+                <CustomButton text={"remove"} size={12}  onPress={removeBook} />
             </View>
         </View>}
     </>

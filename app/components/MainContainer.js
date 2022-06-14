@@ -10,7 +10,7 @@ const homeName = "Home";
 const profileName = "Profile";
 const settingsName = "Settings";
 
-const MainContainer = () => {
+const MainContainer = () => { 
     const [currTab, setCurrTab] = useState(homeName);
 
     return (

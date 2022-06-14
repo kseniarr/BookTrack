@@ -7,24 +7,24 @@ import CustomText from "./../components/CustomText"
 
 const CustomButton = ({ text, onPress, border = false, label = "Button", size = 14, weight = "regular", width, backgroundColor = colors.primaryColor, align }) => {
     return (
-        <TouchableOpacity 
-                style={[styles.btn, {width: width, backgroundColor: backgroundColor}, 
-                border == true && {
-                    borderColor: colors.primaryColor,
-                    borderWidth: 1,
-                    borderRadius: consts.borderRadius * 4,
-                    paddingVertical: 5,
-                    paddingHorizontal: 15,
-                }]}
-                activeOpacity={0.8}
-                accessibilityLabel={label}
-                onPress={onPress}>
-                        <CustomText 
-                                    text={text} 
-                                    color={ backgroundColor == colors.primaryColor ? colors.white : colors.black} 
-                                    size={size} 
-                                    weight={weight}
-                                    align={align}/>
+        <TouchableOpacity
+            style={[styles.btn, { width: width, backgroundColor: backgroundColor },
+            border == true && {
+                borderColor: colors.primaryColor,
+                borderWidth: 1,
+                borderRadius: consts.borderRadius * 4,
+                paddingVertical: 5,
+                paddingHorizontal: 15,
+            }]}
+            activeOpacity={0.8}
+            accessibilityLabel={label}
+            onPress={onPress}>
+            <CustomText
+                text={text}
+                color={backgroundColor == colors.primaryColor ? colors.white : colors.black}
+                size={size}
+                weight={weight}
+                align={align} />
         </TouchableOpacity>
     )
 }

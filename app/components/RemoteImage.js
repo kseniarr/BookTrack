@@ -1,7 +1,7 @@
 import { StyleSheet, Image } from 'react-native'
 import React from 'react'
 
-const RemoteImage = ({uri, desiredWidth, alignSelf, circle = false}) => {
+const RemoteImage = ({ uri, desiredWidth, alignSelf, circle = false }) => {
     const [desiredHeight, setDesiredHeight] = React.useState(0)
 
     Image.getSize(uri, (width, height) => {
@@ -11,7 +11,7 @@ const RemoteImage = ({uri, desiredWidth, alignSelf, circle = false}) => {
     return (
         <Image
             resizeMethod='scale'
-            source={{uri}}
+            source={{ uri: uri }}
             defaultSource={require("./../assets/images/image-default.jpg")}
             style={{
                 borderWidth: 1,

@@ -4,11 +4,19 @@ import Ionicons from 'react-native-vector-icons/Ionicons'
 import colors from '../config/colors'
 import RemoteImage from "./../components/RemoteImage"
 
-const Avatar = ({image}) => {
+const Avatar = ({ image, size = 144 }) => {
     return (
-        <View style={styles.avatar}>
+        <View style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: colors.grey,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+        }}>
             {!image && <Ionicons name="person" style={{ fontSize: 100 }} color={colors.white}></Ionicons>}
-            {image != null && image != undefined && <RemoteImage uri={image} desiredWidth={144} circle={true}/>}
+            {image != null && image != undefined && <RemoteImage uri={image} desiredWidth={size} circle={true} />}
         </View>
     )
 }
@@ -16,13 +24,4 @@ const Avatar = ({image}) => {
 export default Avatar
 
 const styles = StyleSheet.create({
-    avatar: {
-        width: 144,
-        height: 144, 
-        borderRadius: 164/2,
-        backgroundColor: colors.grey,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-    }
 })

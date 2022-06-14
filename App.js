@@ -9,6 +9,7 @@ import { LogBox } from 'react-native';
 import { AppStateProvider } from './app/components/AppStateContext';
 import SignupScreen from './app/screens/SignupScreen';
 import BookScreen from './app/screens/BookScreen';
+import ProfileScreen from './app/screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -39,6 +40,7 @@ export default function App() {
                     <Stack.Screen options={{ headerShown: false }} name="Signup" component={SignupScreen} />
                     <Stack.Screen options={{ headerShown: false }} name="Main" component={MainContainer} />
                     <Stack.Screen options={{ headerShown: false }} name="Book" component={BookScreen} />
+                    <Stack.Screen options={{ headerShown: false }} name="Profile" component={ProfileScreen} />
                 </Stack.Navigator>
             </NavigationContainer>
         </AppStateProvider>

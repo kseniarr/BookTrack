@@ -12,8 +12,10 @@ import Loader from '../components/Loader';
 import YearlyGoal from '../components/YearlyGoal';
 import Library from '../components/Library';
 import useRefresh from '../config/useRefresh';
+import BackArrow from '../components/BackArrow';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ route }) => {
+    const { uid } = route == undefined ? "" : route.params;
     const { context, setContext } = useContext(AppStateContext);
     const [read, setRead] = useState(0);
     const [toRead, setToRead] = useState(0);
@@ -21,10 +23,9 @@ const ProfileScreen = () => {
     const [avgRating, setAvgRating] = useState(0);
     const [books, setBooks] = useState(null);
     const [recentBooks, setRecentBooks] = useState(null);
-    const [reviews, setReviews] = useState(null);
     const [isLoaded, setIsLoaded] = useState(consts.loadingStates.INITIAL);
     const [userImg, setUserImg] = useState("");
-    const {refresh, setRefresh} = useRefresh();
+    const { refresh, setRefresh } = useRefresh();
 
     const navigation = useNavigation();
     let snapshot = null;
@@ -33,7 +34,7 @@ const ProfileScreen = () => {
         setRecentBooks(null);
         setIsLoaded(consts.loadingStates.LOADING);
         const func = async () => {
-            let tmpSnap = await db.collection('bookshelves').doc(context.uid).get();
+            let tmpSnap = await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).get();
 
             if (tmpSnap.data() == snapshot?.data()) return;
             else snapshot = tmpSnap;
@@ -41,7 +42,6 @@ const ProfileScreen = () => {
             let numRead = snapshot.data().read.length;
             let numToRead = snapshot.data().toRead.length;
             let numDnf = snapshot.data().dnf.length;
-            let reviews = [];
             let numRatings = 0;
             let sumRatings = 0;
 
@@ -56,7 +56,7 @@ const ProfileScreen = () => {
                     recent = snapshot.data().read.slice(-7);
                 }
 
-                recent.sort(function(x, y){
+                recent.sort(function (x, y) {
                     return y.timestamp - x.timestamp;
                 });
 
@@ -65,7 +65,7 @@ const ProfileScreen = () => {
                     let json = await response.json();
                     let type = "id";
 
-                    if(json.error) {
+                    if (json.error) {
                         console.log(json.error.message);
                     } else {
                         if (json.volumeInfo == undefined) {
@@ -73,7 +73,7 @@ const ProfileScreen = () => {
                             json = await response.json();
                             type = "isbn"
                         }
-    
+
                         if (type == "id") {
                             if (json.volumeInfo.imageLinks.thumbnail) {
                                 recentUrls.push({
@@ -99,14 +99,6 @@ const ProfileScreen = () => {
             }
 
             snapshot.data().read.map((element) => {
-                if (element.review && element.review != "") {
-                    reviews.push({
-                        id: element.id,
-                        rating: element.rating,
-                        review: element.review,
-                    });
-                }
-
                 if (element.rating > 0) {
                     numRatings++;
                     sumRatings += element.rating;
@@ -116,7 +108,6 @@ const ProfileScreen = () => {
             setRead(numRead);
             setToRead(numToRead);
             setDnf(numDnf);
-            setReviews(reviews);
             setAvgRating(numRatings > 0 ? Math.round(sumRatings / numRatings * 100) / 100 : 0);
             setIsLoaded(consts.loadingStates.SUCCESS);
         }
@@ -126,7 +117,7 @@ const ProfileScreen = () => {
 
     useEffect(() => {
         const func = async () => {
-            const data = await db.collection('user').doc(context.uid).get();
+            const data = await db.collection('user').doc(route == undefined || route == null ? context.uid : uid).get();
             setUserImg(data.data().profileImg);
         }
 
@@ -134,31 +125,32 @@ const ProfileScreen = () => {
     }, [])
 
     const removeBook = async (shelf, id) => {
-        const data = await db.collection('bookshelves').doc(context.uid).get();
+        const data = await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).get();
         let ind;
         data.data()[shelf].forEach((element, elementID) => {
-            if(element.id == id) ind = elementID;
+            if (element.id == id) ind = elementID;
         })
 
-        await db.collection('bookshelves').doc(context.uid).update({[shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind])});
+        await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
         setRefresh((prev) => prev + 1);
     }
 
     const updateRating = async (shelf, id, userRating) => {
-        const data = await db.collection('bookshelves').doc(context.uid).get();
+        const data = await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).get();
         let ind;
         data.data().read.forEach((element, elementID) => {
-            if(element.id == id) ind = elementID;
+            if (element.id == id) ind = elementID;
         })
 
-        await db.collection('bookshelves').doc(context.uid).update({[shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind])});
-        await db.collection('bookshelves').doc(context.uid).update({[shelf]: firebase.firestore.FieldValue.arrayUnion({
-            id: data.data()[shelf][ind].id,
-            timestamp: data.data()[shelf][ind].timestamp,
-            rating: userRating,
-            review: data.data()[shelf][ind].review == undefined ? "" : data.data()[shelf][ind].review,
-        })});
-        
+        await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
+        await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).update({
+            [shelf]: firebase.firestore.FieldValue.arrayUnion({
+                id: data.data()[shelf][ind].id,
+                timestamp: data.data()[shelf][ind].timestamp,
+                rating: userRating,
+            })
+        });
+
         setRefresh((prev) => prev + 1);
     }
 
@@ -166,10 +158,11 @@ const ProfileScreen = () => {
         <>
             {isLoaded == consts.loadingStates.LOADING && <View style={styles.loader}><Loader /></View>}
             {isLoaded == consts.loadingStates.SUCCESS && <View>
+                {(uid != null || uid != undefined) && <BackArrow />}
                 <ScrollView contentContainerStyle={styles.scrollContainer}>
                     <View style={styles.userData}>
                         <View style={styles.header}>
-                            <Avatar image={userImg}/>
+                            <Avatar image={userImg} />
                             <View style={{ marginVertical: 8 }}><CustomText text={`${context.username}`} weight={"bold"} size={24} align="center" /></View>
                         </View>
                         <View style={[styles.statictic, styles.alignLeft]}>
@@ -179,7 +172,6 @@ const ProfileScreen = () => {
                         </View>
                         <View style={[styles.statictic, styles.alignLeft]}>
                             <CustomText text={"average rating: " + avgRating} />
-                            <CustomText text={"number of reviews: " + (reviews == null ? 0 : reviews.length)} />
                         </View>
                     </View>
                     <View style={styles.userData}>
@@ -190,7 +182,7 @@ const ProfileScreen = () => {
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 renderItem={(element) => {
-                                    return <TouchableOpacity key={element.item.id+"recent"} activeOpacity={0.9} onPress={() => {
+                                    return <TouchableOpacity key={element.item.id + "recent"} activeOpacity={0.9} onPress={() => {
                                         navigation.navigate("Book", { id: element.item.id });
                                     }}>
                                         <View style={{ marginHorizontal: 5 }}>
@@ -205,9 +197,9 @@ const ProfileScreen = () => {
                         <YearlyGoal />
                     </View>
                     {books != null && <View style={styles.userData}>
-                        <Library books={books} 
-                        removeBook = {removeBook}
-                        updateRating={updateRating}
+                        <Library books={books}
+                            removeBook={removeBook}
+                            updateRating={updateRating}
                         />
                     </View>}
                 </ScrollView>
@@ -268,7 +260,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: "100%",
         height: "100%",
-    }
+    },
 });
 
 export default ProfileScreen;

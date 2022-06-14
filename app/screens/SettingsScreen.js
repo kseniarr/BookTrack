@@ -1,5 +1,5 @@
 import { StyleSheet, View, ScrollView } from 'react-native'
-import React from 'react'
+import React, { useContext, useState } from 'react'
 import CustomText from "./../components/CustomText";
 import { auth } from '../../firebase'
 import CustomButton from '../components/CustomButton';
@@ -7,9 +7,11 @@ import colors from '../config/colors';
 import { useNavigation } from '@react-navigation/core'
 import consts from '../config/consts';
 import UpdateImage from '../components/UpdateImage';
+import AppStateContext from '../components/AppStateContext';
 
 const SettingsScreen = () => {
     const navigation = useNavigation();
+    const { context, setContext } = useContext(AppStateContext);
 
     const handleSignOut = () => {
         auth
@@ -25,6 +27,12 @@ const SettingsScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingBottom: consts.bottomPadding }}>
                 <UpdateImage image={""} />
                 <View style={{ marginTop: 10, marginBottom: 20 }}><CustomText text={"Settings"} size={24} align="center" /></View>
+                <View style={{
+                    marginVertical: 15,
+                }}>
+                    <View><CustomText text={`username: ${context.username}`} size={14} /></View>
+                    <View><CustomText text={`email: ${auth.currentUser?.email}`} size={14} /></View>
+                </View>
                 <View style={{ marginTop: 20 }}><CustomButton customStyle={styles.button} onPress={handleSignOut}
                     text={"Sign out"} color={colors.white} weight="bold" size={16} /></View>
             </ScrollView>

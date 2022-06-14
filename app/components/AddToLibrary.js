@@ -8,12 +8,14 @@ import Modal from "react-native-modal"
 import { db, firebase } from '../../firebase';
 import AppStateContext from "./AppStateContext";
 import StarRating from "./StarRating";
+import useRefresh from "../config/useRefresh";
 
 const AddToLibrary = ({ align, bookId }) => {
     const [showAddToLibrary, setShowAddToLibrary] = useState(false);
     const [activeBtn, setActiveBtn] = useState(null); // null - no active btns, 0 - "read", 1 - "to read", 2 - "dnf"
     const { context, setContext } = useContext(AppStateContext);
     const [totalStars, setTotalStars] = useState(0);
+    const { refresh, setRefresh } = useRefresh();
 
     const showWindow = () => {
         showAddToLibrary ? setShowAddToLibrary(false) : setShowAddToLibrary(true);
@@ -27,8 +29,23 @@ const AddToLibrary = ({ align, bookId }) => {
         setTotalStars(0);
     }, [activeBtn])
 
+    const removeBook = async (shelf, id) => {
+        const data = await db.collection('bookshelves').doc(context.uid).get();
+        let ind;
+        data.data()[shelf].forEach((element, elementID) => {
+            if (element.id == id) ind = elementID;
+        })
+
+        await db.collection('bookshelves').doc(context.uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
+        setRefresh((prev) => prev + 1);
+    }
+
     const AddToLibrary = async () => {
+        let response = await db.collection("bookshelves").doc(context.uid).get();
         if (activeBtn == 0) {
+            if ((response.data().read.map((element) => element.id).includes(bookId))) {
+                await removeBook("read", bookId);
+            }
             await db.collection("bookshelves").doc(context.uid).update({
                 read: firebase.firestore.FieldValue.arrayUnion({
                     id: bookId,
@@ -37,6 +54,9 @@ const AddToLibrary = ({ align, bookId }) => {
                 })
             });
         } else if (activeBtn = 1) {
+            if ((await db.collection("bookshelves").doc(context.uid).get().data().toRead.map((element) => element.id).includes(bookId))) {
+                await removeBook("toRead", bookId);
+            }
             await db.collection("bookshelves").doc(context.uid).update({
                 toRead: firebase.firestore.FieldValue.arrayUnion({
                     id: bookId,
@@ -44,6 +64,9 @@ const AddToLibrary = ({ align, bookId }) => {
                 })
             });
         } else if (activeBtn == 2) {
+            if ((await db.collection("bookshelves").doc(context.uid).get().data().dnf.map((element) => element.id).includes(bookId))) {
+                await removeBook("dnf", bookId);
+            }
             await db.collection("bookshelves").doc(context.uid).update({
                 dnf: firebase.firestore.FieldValue.arrayUnion({
                     id: bookId,
@@ -72,7 +95,7 @@ const AddToLibrary = ({ align, bookId }) => {
                                 <View style={[styles.option, { backgroundColor: activeBtn == 0 ? colors.white : "white" }]}>
                                     <CustomButton width={150} backgroundColor={activeBtn == 0 ? colors.white : "white"} text={"read"} onPress={() => activeBtn == 0 ? setActiveBtn(null) : setActiveBtn(0)} />
                                     {activeBtn == 0 && <View>
-                                        <StarRating total={changeTotal}/>
+                                        <StarRating total={changeTotal} />
                                     </View>}
                                 </View>
                                 <View style={[styles.option, { backgroundColor: activeBtn == 1 ? colors.white : "white" }]}>
@@ -98,7 +121,7 @@ const AddToLibrary = ({ align, bookId }) => {
                 }}>
                     <CustomButton
                         text={"Add to library"}
-                        style={[styles.btn, { position: "relative" }]}
+                        style={{ position: "relative" }}
                         weight={"medium"}
                         width={140}
                         size={12}

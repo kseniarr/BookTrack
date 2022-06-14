@@ -1,18 +1,21 @@
-import { StyleSheet, TouchableOpacity, View, ScrollView, ImageBackground } from 'react-native'
-import React, { useState, useEffect } from 'react'
-import Ionicons from 'react-native-vector-icons/Ionicons'
-import { useNavigation } from '@react-navigation/core';
+import { StyleSheet, View, ScrollView, ImageBackground } from 'react-native'
+import React, { useState, useEffect, useContext } from 'react'
 import RemoteImage from '../components/RemoteImage';
 import CustomText from '../components/CustomText';
 import colors from '../config/colors';
 import consts from '../config/consts';
 import AddToLibrary from '../components/AddToLibrary';
 import Svg, { Path } from 'react-native-svg';
+import { db, firebase } from '../../firebase';
+import AddReview from '../components/AddReview';
+import AppStateContext from '../components/AppStateContext';
+import StarRating from '../components/StarRating';
+import Review from '../components/Review';
+import BackArrow from '../components/BackArrow';
 import CustomButton from '../components/CustomButton';
-import { db } from '../../firebase';
+import useRefresh from '../config/useRefresh';
 
 const BookScreen = ({ route }) => {
-    const navigation = useNavigation();
     const { id } = route.params;
     const [coverURL, setCoverURL] = useState();
     const [bookTitle, setBookTitle] = useState();
@@ -30,14 +33,82 @@ const BookScreen = ({ route }) => {
     const [categories, setCategories] = useState(null);
     const [description, setDescription] = useState("No description provided");
     const [ISBN, setISBN] = useState("Not stated");
+    const [shelf, setShelf] = useState(null);
+    const [userRating, setUserRating] = useState(null);
+    const { context, setContext } = useContext(AppStateContext);
+    const [userReview, setUserReview] = useState(null);
+    const [reviews, setReviews] = useState();
+    const { refresh, setRefresh } = useRefresh();
+
     let type = "id";
 
+    // get reviews
+    useEffect(() => {
+        const getUserReview = async () => {
+            let response = await db.collection('reviews').doc(id).get(context.uid);
+            let data = response.data();
+            if (data) setUserReview(data[context.uid]);
+        }
+
+        const getReviews = async () => {
+            let response = await db.collection('reviews').doc(id).get();
+            let reviewsArr = [];
+            for (const [key, value] of Object.entries(response.data())) {
+                if (key !== context.uid) {
+                    let resp = await db.collection('bookshelves').doc(key).get();
+                    let rating = 0;
+                    resp.data().read.map((element) => {
+                        if (element.id == id) rating = element.rating;
+                    });
+
+
+                    resp = await db.collection('user').doc(key).get();
+                    let username = resp.data().username;
+                    reviewsArr.push({
+                        uid: key,
+                        review: value,
+                        rating: rating,
+                        username: username,
+                    })
+                    setReviews(reviewsArr);
+                }
+            }
+        }
+
+        getUserReview();
+        getReviews();
+    }, [refresh])
+
+    // set user shelf and rating
+    useEffect(() => {
+        const func = async () => {
+            let response = await db.collection('bookshelves').doc(context.uid).get();
+            let data = response.data();
+
+            let readIds = data.read.map((element) => element.id);
+            let toReadIds = data.toRead.map((element) => element.id);
+            let dnfIds = data.dnf.map((element) => element.id);
+
+            if (readIds.includes(id)) {
+                setShelf("read");
+                data.read.map((element) => {
+                    if (element.id == id) setUserRating(element.rating)
+                });
+            }
+            else if (toReadIds.includes(id)) setShelf("toRead");
+            else if (dnfIds.includes(id)) setShelf("dnf");
+        }
+
+        func();
+    }, [refresh])
+
+    // other book data and loader
     useEffect(() => {
         const getCategories = (categories) => {
             let arr = [];
-            for(let i = 0; i < categories.length; i++) {
+            for (let i = 0; i < categories.length; i++) {
                 let tmp = categories[i].split(/&|,|\//);
-                for(let j = 0; j < tmp.length; j++) {
+                for (let j = 0; j < tmp.length; j++) {
                     arr.push(tmp[j].trim());
                 }
             }
@@ -45,10 +116,10 @@ const BookScreen = ({ route }) => {
         }
 
         const getBookAuthors = (authors) => {
-            if(authors.length > 1) {
+            if (authors.length > 1) {
                 let authorsStr = "";
-                for(let i = 0; i < authors.length; i++) {
-                    if(i == authors.length - 1) {
+                for (let i = 0; i < authors.length; i++) {
+                    if (i == authors.length - 1) {
                         authorsStr += authors[i];
                     } else {
                         authorsStr += authors[i] + ", ";
@@ -60,8 +131,52 @@ const BookScreen = ({ route }) => {
             }
         }
 
-        let rating = 0; 
+        const getReviews = async () => {
+            let response = await db.collection("reviews").doc(id).get();
+            if (response.data())
+                setReviewsCount(Object.keys(response.data()).length);
+        }
+
+        let rating = 0;
         let numRatings = 0;
+
+        const fromDB = async () => {
+            const snapshot = await db.collection('bookshelves').get();
+            let numRead = 0;
+            let numToRead = 0;
+            let numDnf = 0;
+
+            snapshot.docs.map(doc => {
+                let read = doc.data().read;
+                let toRead = doc.data().toRead;
+                let dnf = doc.data().dnf;
+                for (let i = 0; i < read.length; i++) {
+                    if (read[i].id == id) {
+                        numRead++;
+                        rating += read[i].rating;
+                        if (read[i].rating != 0) {
+                            numRatings += 1;
+                        }
+                    }
+                }
+                for (let i = 0; i < toRead.length; i++) {
+                    if (toRead[i].id == id) {
+                        numToRead++;
+                    }
+                }
+                for (let i = 0; i < dnf.length; i++) {
+                    if (dnf[i].id == id) {
+                        numDnf++;
+                    }
+                }
+                setRating(numRatings == 0 ? 0 : rating / numRatings);
+                setRatingsCount(numRatings);
+            });
+
+            setRead(numRead);
+            setToRead(numToRead);
+            setDnf(numDnf);
+        }
 
         const func = async () => {
             fromDB();
@@ -104,15 +219,19 @@ const BookScreen = ({ route }) => {
                     setDescription(json.items[0].volumeInfo.description);
                 }
 
+                if (json.items[0].volumeInfo.averageRating) {
+                    setRating((prev) => prev + json.items[0].volumeInfo.averageRating);
+                }
+
                 setISBN(id);
 
                 setIsLoaded(true);
             }
             else if (type == "id") {
-                if(json.volumeInfo.imageLinks.thumbnail) {
+                if (json.volumeInfo.imageLinks.thumbnail) {
                     setCoverURL(json.volumeInfo.imageLinks.thumbnail);
                 }
-                else if(json.volumeInfo.imageLinks.smallThumbnail) {
+                else if (json.volumeInfo.imageLinks.smallThumbnail) {
                     setCoverURL(json.volumeInfo.imageLinks.smallThumbnail);
                 }
 
@@ -144,60 +263,23 @@ const BookScreen = ({ route }) => {
                     setDescription(json.volumeInfo.description);
                 }
 
+                if (json.volumeInfo.averageRating) {
+                    setRating((prev) => prev + json.volumeInfo.averageRating);
+                }
+
                 setIsLoaded(true);
             }
         }
 
-        const fromDB = async() =>  {
-            const snapshot = await db.collection('bookshelves').get();
-            let numRead = 0;
-            let numToRead = 0;
-            let numDnf = 0;
-            let numReviews = 0;
-
-            snapshot.docs.map(doc => {
-                let read = doc.data().read;
-                let toRead = doc.data().toRead;
-                let dnf = doc.data().dnf;
-                for(let i = 0; i < read.length; i++) {
-                    if(read[i].id == id) {
-                        numRead++;
-                        rating += read[i].rating;
-                        if(read[i].rating != 0) {
-                            numRatings += 1;
-                        }
-                    }
-                }
-                for(let i = 0; i < toRead.length; i++) {
-                    if(toRead[i].id == id) {
-                        numToRead++;
-                    }
-                }
-                for(let i = 0; i < dnf.length; i++) {
-                    if(dnf[i].id == id) {
-                        numDnf++;
-                    }
-                }
-                setRating(numRatings == 0 ? 0 : rating / numRatings);
-                setRatingsCount(numRatings);
-            });
-
-            setRead(numRead);
-            setToRead(numToRead);
-            setDnf(numDnf);
-            setReviewsCount(numReviews);
-        }
-
+        getReviews();
         func();
-    }, [])
+    }, [refresh])
+
+
 
     return (
         isLoaded && <>
-            <View style={styles.topContainer}>
-                <TouchableOpacity style={styles.arrow} activeOpacity={0.7} onPress={() => navigation.goBack()}>
-                    <Ionicons name={"arrow-back-outline"} style={{ fontSize: 24 }}></Ionicons>
-                </TouchableOpacity>
-            </View>
+            <BackArrow />
             <ScrollView contentContainerStyle={
                 styles.container
             } showsVerticalScrollIndicator={false}>
@@ -230,15 +312,13 @@ const BookScreen = ({ route }) => {
                                 textShadowOffset={{ width: 1, height: 1 }}
                                 textShadowRadius={5} textShadowColor={"#2a302f"} /> :
                                 <CustomText style={styles.authors} text={bookAuthors} weight="medium"
-                                        size={16} align={"center"} color={colors.white}
-                                        textShadowOffset={{ width: 1, height: 1 }}
-                                        textShadowRadius={5} textShadowColor={"#2a302f"}/>
+                                    size={16} align={"center"} color={colors.white}
+                                    textShadowOffset={{ width: 1, height: 1 }}
+                                    textShadowRadius={5} textShadowColor={"#2a302f"} />
                             }</View>
 
                             <View style={styles.rating}>
-                                <CustomText text={rating} align={"center"} color={colors.white} weight="medium"
-                                    size={16} textShadowOffset={{ width: 1, height: 1 }}
-                                    textShadowRadius={5} textShadowColor={"#2a302f"} />
+                                <StarRating rating={rating} />
                                 <CustomText text={ratingsCount + " ratings"} align={"center"} color={colors.white} weight="medium"
                                     size={16} textShadowOffset={{ width: 1, height: 1 }}
                                     textShadowRadius={5} textShadowColor={"#2a302f"} />
@@ -246,8 +326,13 @@ const BookScreen = ({ route }) => {
                                     size={16} textShadowOffset={{ width: 1, height: 1 }}
                                     textShadowRadius={5} textShadowColor={"#2a302f"} />
                             </View>
-
-                            <View style={{ marginVertical: 10 }}><AddToLibrary align={"center"} /></View>
+                            {userRating != null && <CustomText text={`your rating: ${userRating}`} align={"center"} color={colors.white} weight="medium"
+                                size={12} textShadowOffset={{ width: 1, height: 1 }}
+                                textShadowRadius={5} textShadowColor={"#2a302f"} />}
+                            {shelf != null && <CustomText text={`in shelf: ${shelf}`} align={"center"} color={colors.white} weight="medium"
+                                size={12} textShadowOffset={{ width: 1, height: 1 }}
+                                textShadowRadius={5} textShadowColor={"#2a302f"} />}
+                            <View style={{ marginVertical: 10 }}><AddToLibrary align={"center"} bookId={id} /></View>
 
                             <View style={styles.statistics}>
                                 <View style={styles.statictic}>
@@ -301,9 +386,35 @@ const BookScreen = ({ route }) => {
                 </View>
                 <View style={styles.reviews}>
                     <View style={{ marginVertical: 10 }}><CustomText text={"Reviews"} size={24} align={"center"} /></View>
-                    <CustomText text={reviewsCount ? "reviews" : "0 reviews"} align={"center"} />
-                    <View style={{ alignItems: 'center', marginVertical: 10 }}>
-                        <CustomButton text={"Add review"} width={140} />
+                    <View style={{ marginBottom: 20 }}><CustomText text={`${reviewsCount} reviews`} align={"center"} /></View>
+                    {(userReview == undefined || userReview == null) && <AddReview id={id} callback={() => setRefresh((prev) => prev + 1)} />}
+                    {userReview != undefined && userReview != null &&
+                        <View style={{ alignItems: 'center', marginVertical: 10 }}>
+                            <CustomButton text={"Delete review"} width={140} onPress={async () => {
+                                await db.collection("reviews").doc(id).update({
+                                    [context.uid]: firebase.firestore.FieldValue.delete(),
+                                });
+                                setRefresh((prev) => prev + 1);
+                            }} />
+                        </View>}
+                    {userReview != undefined && userReview != null &&
+                        <Review
+                            text={userReview}
+                            rating={userRating}
+                            uid={context.uid}
+                            username={context.username} />}
+                    <View>
+                        {reviews != undefined && reviews != null && reviews.map((element) => {
+                            return <Review style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                                key={element.uid}
+                                text={element.review}
+                                rating={element.rating}
+                                uid={element.uid}
+                                username={element.username} />
+                        })}
                     </View>
                 </View>
             </ScrollView>

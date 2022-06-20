@@ -31,7 +31,7 @@ const SignupScreen = () => {
             .createUserWithEmailAndPassword(email, password)
             .then(userCredentials => {
                 const user = userCredentials.user;
-                setContext({username: username, uid: user.uid});
+                setContext({username: username});
 
                 db.collection("bookshelves").doc(user.uid).set({
                     read: [],
@@ -58,11 +58,11 @@ const SignupScreen = () => {
                 source={require("./../assets/images/Bookswall_generated.png")}>
                 <View style={styles.header}
                 >
-                    <CustomText text={"Find your next favorite book!"} color={colors.white}
+                    <View style={{ paddingHorizontal: 10 }}><CustomText text={"Find your next favorite book!"} color={colors.white}
                         weight={"extra-bold"} size={30} align="center"
                         textShadowOffset={{ width: 2, height: 2 }}
                         textShadowRadius={20}
-                        textShadowColor={"#131713"} />
+                        textShadowColor={"#131713"} /></View>
                 </View>
                 <View style={styles.footer}
                 >

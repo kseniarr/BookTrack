@@ -6,7 +6,7 @@ import colors from '../config/colors';
 import consts from '../config/consts';
 import AddToLibrary from '../components/AddToLibrary';
 import Svg, { Path } from 'react-native-svg';
-import { db, firebase } from '../../firebase';
+import { db, firebase, auth } from '../../firebase';
 import AddReview from '../components/AddReview';
 import AppStateContext from '../components/AppStateContext';
 import StarRating from '../components/StarRating';
@@ -21,7 +21,7 @@ const BookScreen = ({ route }) => {
     const [bookTitle, setBookTitle] = useState();
     const [bookAuthors, setBookAuthors] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [rating, setRating] = useState(4.5);
+    const [rating, setRating] = useState(0);
     const [ratingsCount, setRatingsCount] = useState(0);
     const [reviewsCount, setReviewsCount] = useState(0);
     const [read, setRead] = useState(0);
@@ -45,32 +45,34 @@ const BookScreen = ({ route }) => {
     // get reviews
     useEffect(() => {
         const getUserReview = async () => {
-            let response = await db.collection('reviews').doc(id).get(context.uid);
+            let response = await db.collection('reviews').doc(id).get(auth.currentUser?.uid);
             let data = response.data();
-            if (data) setUserReview(data[context.uid]);
+            if (data) setUserReview(data[auth.currentUser?.uid]);
         }
 
         const getReviews = async () => {
             let response = await db.collection('reviews').doc(id).get();
             let reviewsArr = [];
-            for (const [key, value] of Object.entries(response.data())) {
-                if (key !== context.uid) {
-                    let resp = await db.collection('bookshelves').doc(key).get();
-                    let rating = 0;
-                    resp.data().read.map((element) => {
-                        if (element.id == id) rating = element.rating;
-                    });
-
-
-                    resp = await db.collection('user').doc(key).get();
-                    let username = resp.data().username;
-                    reviewsArr.push({
-                        uid: key,
-                        review: value,
-                        rating: rating,
-                        username: username,
-                    })
-                    setReviews(reviewsArr);
+            if(response.data()) {
+                for (const [key, value] of Object.entries(response.data())) {
+                    if (key !== auth.currentUser?.uid) {
+                        let resp = await db.collection('bookshelves').doc(key).get();
+                        let rating = 0;
+                        resp.data().read.map((element) => {
+                            if (element.id == id) rating = element.rating;
+                        });
+    
+    
+                        resp = await db.collection('user').doc(key).get();
+                        let username = resp.data().username;
+                        reviewsArr.push({
+                            uid: key,
+                            review: value,
+                            rating: rating,
+                            username: username,
+                        })
+                        setReviews(reviewsArr);
+                    }
                 }
             }
         }
@@ -82,7 +84,7 @@ const BookScreen = ({ route }) => {
     // set user shelf and rating
     useEffect(() => {
         const func = async () => {
-            let response = await db.collection('bookshelves').doc(context.uid).get();
+            let response = await db.collection('bookshelves').doc(auth.currentUser?.uid).get();
             let data = response.data();
 
             let readIds = data.read.map((element) => element.id);
@@ -109,7 +111,9 @@ const BookScreen = ({ route }) => {
             for (let i = 0; i < categories.length; i++) {
                 let tmp = categories[i].split(/&|,|\//);
                 for (let j = 0; j < tmp.length; j++) {
-                    arr.push(tmp[j].trim());
+                    if(!arr.includes(tmp[j].trim())) {
+                        arr.push(tmp[j].trim());
+                    }
                 }
             }
             setCategories(arr);
@@ -169,8 +173,6 @@ const BookScreen = ({ route }) => {
                         numDnf++;
                     }
                 }
-                setRating(numRatings == 0 ? 0 : rating / numRatings);
-                setRatingsCount(numRatings);
             });
 
             setRead(numRead);
@@ -206,9 +208,18 @@ const BookScreen = ({ route }) => {
                     setPublisher(json.items[0].volumeInfo.publisher);
                 }
 
+                if(userRating) {
+                    rating += userRating;
+                    numRatings++;
+                }
+
                 if (json.items[0].volumeInfo.averageRating) {
-                    rating += json.items[0].volumeInfo.averageRating;
-                    numRatings += json.items[0].volumeInfo.ratingsCount;
+                    setRating(() => numRatings == 0 ? json.items[0].volumeInfo.averageRating : 
+                                    Math.round(rating/numRatings) + json.items[0].volumeInfo.averageRating);
+                    setRatingsCount(() => numRatings + json.items[0].volumeInfo.ratingsCount);
+                } else {
+                    setRating(rating);
+                    setRatingsCount(numRatings);
                 }
 
                 if (json.items[0].volumeInfo.categories) {
@@ -219,12 +230,7 @@ const BookScreen = ({ route }) => {
                     setDescription(json.items[0].volumeInfo.description);
                 }
 
-                if (json.items[0].volumeInfo.averageRating) {
-                    setRating((prev) => prev + json.items[0].volumeInfo.averageRating);
-                }
-
                 setISBN(id);
-
                 setIsLoaded(true);
             }
             else if (type == "id") {
@@ -250,9 +256,17 @@ const BookScreen = ({ route }) => {
                     setPublisher(json.volumeInfo.publisher);
                 }
 
+                if(userRating) {
+                    rating += userRating;
+                    numRatings++;
+                }
+
                 if (json.volumeInfo.averageRating) {
-                    rating += json.volumeInfo.averageRating;
-                    numRatings += json.volumeInfo.ratingsCount;
+                    setRating(numRatings == 0 ? json.volumeInfo.averageRating : Math.round(rating / numRatings) + json.volumeInfo.averageRating);
+                    setRatingsCount(numRatings + json.volumeInfo.ratingsCount);
+                }  else {
+                    setRating(rating);
+                    setRatingsCount(numRatings);
                 }
 
                 if (json.volumeInfo.categories) {
@@ -263,10 +277,6 @@ const BookScreen = ({ route }) => {
                     setDescription(json.volumeInfo.description);
                 }
 
-                if (json.volumeInfo.averageRating) {
-                    setRating((prev) => prev + json.volumeInfo.averageRating);
-                }
-
                 setIsLoaded(true);
             }
         }
@@ -274,8 +284,6 @@ const BookScreen = ({ route }) => {
         getReviews();
         func();
     }, [refresh])
-
-
 
     return (
         isLoaded && <>
@@ -329,7 +337,11 @@ const BookScreen = ({ route }) => {
                             {userRating != null && <CustomText text={`your rating: ${userRating}`} align={"center"} color={colors.white} weight="medium"
                                 size={12} textShadowOffset={{ width: 1, height: 1 }}
                                 textShadowRadius={5} textShadowColor={"#2a302f"} />}
-                            {shelf != null && <CustomText text={`in shelf: ${shelf}`} align={"center"} color={colors.white} weight="medium"
+                            {shelf != null && <CustomText 
+                                                    text={`in shelf: ${shelf}`} 
+                                                    align={"center"} 
+                                                    color={colors.white} 
+                                                    weight="medium"
                                 size={12} textShadowOffset={{ width: 1, height: 1 }}
                                 textShadowRadius={5} textShadowColor={"#2a302f"} />}
                             <View style={{ marginVertical: 10 }}><AddToLibrary align={"center"} bookId={id} /></View>
@@ -392,7 +404,7 @@ const BookScreen = ({ route }) => {
                         <View style={{ alignItems: 'center', marginVertical: 10 }}>
                             <CustomButton text={"Delete review"} width={140} onPress={async () => {
                                 await db.collection("reviews").doc(id).update({
-                                    [context.uid]: firebase.firestore.FieldValue.delete(),
+                                    [auth.currentUser?.uid]: firebase.firestore.FieldValue.delete(),
                                 });
                                 setRefresh((prev) => prev + 1);
                             }} />
@@ -401,7 +413,7 @@ const BookScreen = ({ route }) => {
                         <Review
                             text={userReview}
                             rating={userRating}
-                            uid={context.uid}
+                            uid={auth.currentUser?.uid}
                             username={context.username} />}
                     <View>
                         {reviews != undefined && reviews != null && reviews.map((element) => {

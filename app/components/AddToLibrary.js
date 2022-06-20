@@ -5,7 +5,7 @@ import CustomButton from "./CustomButton";
 import CustomText from "./CustomText";
 import { useState, useContext, useEffect } from "react";
 import Modal from "react-native-modal"
-import { db, firebase } from '../../firebase';
+import { db, firebase, auth } from '../../firebase';
 import AppStateContext from "./AppStateContext";
 import StarRating from "./StarRating";
 import useRefresh from "../config/useRefresh";
@@ -30,49 +30,47 @@ const AddToLibrary = ({ align, bookId }) => {
     }, [activeBtn])
 
     const removeBook = async (shelf, id) => {
-        const data = await db.collection('bookshelves').doc(context.uid).get();
+        const data = await db.collection('bookshelves').doc(auth.currentUser?.uid).get();
         let ind;
         data.data()[shelf].forEach((element, elementID) => {
             if (element.id == id) ind = elementID;
         })
 
-        await db.collection('bookshelves').doc(context.uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
+        await db.collection('bookshelves').doc(cauth.currentUser?.uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
         setRefresh((prev) => prev + 1);
     }
 
-    const AddToLibrary = async () => {
-        let response = await db.collection("bookshelves").doc(context.uid).get();
-        if (activeBtn == 0) {
-            if ((response.data().read.map((element) => element.id).includes(bookId))) {
+    const updateLibrary = async (shelf) => {
+        let response = await db.collection("bookshelves").doc(auth.currentUser?.uid).get();
+            if ((response.data()[shelf].map((element) => element.id).includes(bookId))) {
                 await removeBook("read", bookId);
             }
-            await db.collection("bookshelves").doc(context.uid).update({
-                read: firebase.firestore.FieldValue.arrayUnion({
-                    id: bookId,
-                    timestamp: new Date(),
-                    rating: totalStars,
-                })
-            });
-        } else if (activeBtn = 1) {
-            if ((await db.collection("bookshelves").doc(context.uid).get().data().toRead.map((element) => element.id).includes(bookId))) {
-                await removeBook("toRead", bookId);
+            if(shelf == "read") {
+                await db.collection("bookshelves").doc(auth.currentUser?.uid).update({
+                    [shelf]: firebase.firestore.FieldValue.arrayUnion({
+                        id: bookId,
+                        timestamp: new Date(),
+                        rating: totalStars,
+                    })
+                });
+            } else {
+                await db.collection("bookshelves").doc(auth.currentUser?.uid).update({
+                    [shelf]: firebase.firestore.FieldValue.arrayUnion({
+                        id: bookId,
+                        timestamp: new Date(),
+                    })
+                });
             }
-            await db.collection("bookshelves").doc(context.uid).update({
-                toRead: firebase.firestore.FieldValue.arrayUnion({
-                    id: bookId,
-                    timestamp: new Date(),
-                })
-            });
+
+    }
+    const AddToLibrary = async () => {
+        let response = await db.collection("bookshelves").doc(auth.currentUser?.uid).get();
+        if (activeBtn == 0) {
+            await updateLibrary("read");
+        } else if (activeBtn == 1) {
+            updateLibrary("toRead");
         } else if (activeBtn == 2) {
-            if ((await db.collection("bookshelves").doc(context.uid).get().data().dnf.map((element) => element.id).includes(bookId))) {
-                await removeBook("dnf", bookId);
-            }
-            await db.collection("bookshelves").doc(context.uid).update({
-                dnf: firebase.firestore.FieldValue.arrayUnion({
-                    id: bookId,
-                    timestamp: new Date(),
-                })
-            });
+            updateLibrary("dnf");
         }
 
         setShowAddToLibrary(false);
@@ -157,8 +155,9 @@ const styles = StyleSheet.create({
     options: {
         marginTop: 20,
         marginBottom: 30,
-        alignItems: "flex-start",
-        alignSelf: "flex-start",
+        alignItems: "center",
+        justifyContent: "center",
+        // alignSelf: "flex-start",
         width: "100%",
     },
     option: {

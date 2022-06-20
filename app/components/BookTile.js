@@ -16,7 +16,7 @@ const BookTile = ({ id, profile = false, userRating, shelf, removeBook, updateRa
     const [bookTitle, setBookTitle] = useState();
     const [bookAuthors, setBookAuthors] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [rating, setRating] = useState(4.5);
+    const [rating, setRating] = useState(0);
     const [editable, setEditable] = useState(false);
     const [totalStars, setTotalStars] = useState(0);
 
@@ -161,15 +161,15 @@ const BookTile = ({ id, profile = false, userRating, shelf, removeBook, updateRa
                 {bookAuthors == undefined ? <CustomText text={"authors not stated"} /> : <CustomText style={styles.authors}
                     text={bookAuthors} size={12} numberOfLines={2} align={"left"} />}
 
-                <View>
-                    <CustomText text={`your rating (${userRating})`} size={12} />
+                {shelf == "read" && <View>
+                    <CustomText text={`your rating: (${userRating})`} size={12} />
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <StarRating rating={userRating} />
                         <TouchableOpacity style={{marginHorizontal: 5}} activeOpacity={0.7} onPress={setEditable}>
                             <Ionicons name={"create-outline"} style={{fontSize: 20}}/>
                         </TouchableOpacity>
                     </View>
-                </View>
+                </View>}
                 <CustomButton text={"remove"} size={12} onPress={removeBook} />
             </View>
         </View>}

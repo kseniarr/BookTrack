@@ -6,7 +6,7 @@ import consts from '../config/consts'
 import colors from '../config/colors'
 import CustomText from './CustomText'
 import AppStateContext from './AppStateContext'
-import { db } from '../../firebase'
+import { db, auth } from '../../firebase'
 
 const AddReview = ({ id, callback }) => {
     const [showModal, setShowModal] = useState(false);
@@ -16,7 +16,7 @@ const AddReview = ({ id, callback }) => {
     const addReview = async () => {
         if (review.trim() !== "") {
             await db.collection('reviews').doc(id).update({
-                [context.uid]: review,
+                [auth.currentUser?.uid]: review,
             })
             setShowModal(false);
             callback();
@@ -40,6 +40,7 @@ const AddReview = ({ id, callback }) => {
                             borderRadius: consts.borderRadius,
                             width: 200,
                             height: 200,
+                            padding: 2,
                         }}
                             placeholder="Share your thoughts!"
                             value={review}

@@ -18,29 +18,29 @@ const Library = ({ books, removeBook, updateRating }) => {
 
     return (
         <>
-            <View style={{ flexDirection: 'row' }}>
-                <View style={{ marginHorizontal: 5 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center'}}>
+                <View style={{ margin: 5 }}>
                     <CustomButton text={`read (${books.read.length})`}
                         backgroundColor={currShelf == 0 ? colors.primaryColor : colors.white}
-                        border={true} size={16}
+                        border={true} size={14}
                         onPress={() => { chooseShelf(0) }} />
                 </View>
                 <View style={{ marginHorizontal: 5 }}>
                     <CustomButton text={`to read (${books.toRead.length})`}
                         backgroundColor={currShelf == 1 ? colors.primaryColor : colors.white}
-                        border={true} size={16}
+                        border={true} size={14}
                         onPress={() => { chooseShelf(1) }} />
                 </View>
                 <View style={{ marginHorizontal: 5 }}>
                     <CustomButton text={`dnf (${books.dnf.length})`}
                         backgroundColor={currShelf == 2 ? colors.primaryColor : colors.white}
-                        border={true} size={16}
+                        border={true} size={14}
                         onPress={() => { chooseShelf(2) }} />
                 </View>
             </View>
             <View>
                 {(currShelf == 0 && books.read.length == 0 || currShelf == 1 && books.toRead.length == 0 ||
-                    currShelf == 2 && books.dnf.length == 0) && <View style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}><CustomText text="no books to show" align={"center"} /></View>}
+                    currShelf == 2 && books.dnf.length == 0) && <View style={{ height: 200, alignItems: 'center', justifyContent: 'center' }}><CustomText text="no books to show!" align={"center"} /></View>}
                 <View style={{ width: "100%" }}>
                     {currShelf == 0 && books.read.length > 0 && books.read.sort(function (x, y) {
                         return x.timestamp - y.timestamp;

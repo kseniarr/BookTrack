@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext } from 'react'
 import Avatar from './Avatar'
 import CustomButton from './CustomButton'
 import * as ImagePicker from "expo-image-picker"
-import { db } from '../../firebase'
+import { db, auth } from '../../firebase'
 import AppStateContext from './AppStateContext'
 
 const UpdateImage = ({ image }) => {
@@ -12,7 +12,7 @@ const UpdateImage = ({ image }) => {
 
     useEffect(() => {
         const func = async () => {
-            const data = await db.collection('user').doc(context.uid).get();
+            const data = await db.collection('user').doc(auth.currentUser?.uid).get();
             const img = data.data().profileImg;
             setSelectedImage(img);
         }
@@ -36,7 +36,7 @@ const UpdateImage = ({ image }) => {
 
         if (!result.cancelled) {
             setSelectedImage(result.uri);
-            await db.collection('user').doc(context.uid).update({
+            await db.collection('user').doc(auth.currentUser?.uid).update({
                 profileImg: result.uri,
             })
         }
@@ -44,7 +44,7 @@ const UpdateImage = ({ image }) => {
 
     const deleteProfileImg = async () => {
         setSelectedImage(null);
-        await db.collection('user').doc(context.uid).update({
+        await db.collection('user').doc(auth.currentUser?.uid).update({
             profileImg: "",
         })
     }

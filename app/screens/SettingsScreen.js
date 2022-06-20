@@ -18,6 +18,7 @@ const SettingsScreen = () => {
             .signOut()
             .then(() => {
                 navigation.replace("Login");
+                setContext({});
             })
             .catch(error => alert(error.message))
     }

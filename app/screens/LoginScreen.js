@@ -30,13 +30,11 @@ const SplashScreen = () => {
     const handleLogin = () => {
         auth
             .signInWithEmailAndPassword(email, password)
-            .then(userCredentials => {
-                const user = userCredentials.user;
-                const uid = auth.currentUser?.uid;
+            .then(() => {
 
                 db.collection("user").doc(auth.currentUser?.uid).get().then(doc => {
                     return doc.data().username;
-                }).then(data => setContext({username: data, uid: uid}));
+                }).then(data => setContext({ username: data }));
             })
             .catch(error => alert(error.message))
     }
@@ -51,11 +49,11 @@ const SplashScreen = () => {
                 source={require("./../assets/images/Bookswall_generated.png")}>
                 <Animatable.View style={styles.header}
                     animation="fadeInDownBig">
-                    <CustomText text={"Find your next favorite book!"} color={colors.white}
+                    <View style={{ paddingHorizontal: 10 }}><CustomText text={"Find your next favorite book!"} color={colors.white}
                         weight={"extra-bold"} size={30} align="center"
                         textShadowOffset={{ width: 2, height: 2 }}
                         textShadowRadius={20}
-                        textShadowColor={"#131713"} />
+                        textShadowColor={"#131713"} /></View>
                 </Animatable.View>
                 <Animatable.View style={styles.footer}
                     animation={"fadeInUpBig"}
@@ -67,7 +65,6 @@ const SplashScreen = () => {
                         style={styles.container}
                         behavior="padding"
                     >
-
                         <View style={styles.inputContainer}>
                             <TextInput
                                 placeholder="Email"

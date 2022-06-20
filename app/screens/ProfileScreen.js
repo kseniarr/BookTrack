@@ -5,7 +5,7 @@ import AppStateContext from '../components/AppStateContext';
 import consts from '../config/consts';
 import Avatar from '../components/Avatar';
 import colors from '../config/colors';
-import { db, firebase } from '../../firebase'
+import { db, firebase, auth } from '../../firebase'
 import RemoteImage from "./../components/RemoteImage";
 import { useNavigation } from '@react-navigation/core';
 import Loader from '../components/Loader';
@@ -34,7 +34,7 @@ const ProfileScreen = ({ route }) => {
         setRecentBooks(null);
         setIsLoaded(consts.loadingStates.LOADING);
         const func = async () => {
-            let tmpSnap = await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).get();
+            let tmpSnap = await db.collection('bookshelves').doc(route == undefined || route == null ? auth.currentUser?.uid : uid).get();
 
             if (tmpSnap.data() == snapshot?.data()) return;
             else snapshot = tmpSnap;
@@ -117,7 +117,7 @@ const ProfileScreen = ({ route }) => {
 
     useEffect(() => {
         const func = async () => {
-            const data = await db.collection('user').doc(route == undefined || route == null ? context.uid : uid).get();
+            const data = await db.collection('user').doc(route == undefined || route == null ? auth.currentUser?.uid : uid).get();
             setUserImg(data.data().profileImg);
         }
 
@@ -125,25 +125,25 @@ const ProfileScreen = ({ route }) => {
     }, [])
 
     const removeBook = async (shelf, id) => {
-        const data = await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).get();
+        const data = await db.collection('bookshelves').doc(route == undefined || route == null ? auth.currentUser?.uid : uid).get();
         let ind;
         data.data()[shelf].forEach((element, elementID) => {
             if (element.id == id) ind = elementID;
         })
 
-        await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
+        await db.collection('bookshelves').doc(route == undefined || route == null ? auth.currentUser?.uid : uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
         setRefresh((prev) => prev + 1);
     }
 
     const updateRating = async (shelf, id, userRating) => {
-        const data = await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).get();
+        const data = await db.collection('bookshelves').doc(route == undefined || route == null ? auth.currentUser?.uid : uid).get();
         let ind;
         data.data().read.forEach((element, elementID) => {
             if (element.id == id) ind = elementID;
         })
 
-        await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
-        await db.collection('bookshelves').doc(route == undefined || route == null ? context.uid : uid).update({
+        await db.collection('bookshelves').doc(route == undefined || route == null ? auth.currentUser?.uid : uid).update({ [shelf]: firebase.firestore.FieldValue.arrayRemove(data.data()[shelf][ind]) });
+        await db.collection('bookshelves').doc(route == undefined || route == null ? auth.currentUser?.uid : uid).update({
             [shelf]: firebase.firestore.FieldValue.arrayUnion({
                 id: data.data()[shelf][ind].id,
                 timestamp: data.data()[shelf][ind].timestamp,

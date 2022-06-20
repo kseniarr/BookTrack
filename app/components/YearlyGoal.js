@@ -1,7 +1,7 @@
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useState, useContext, useEffect } from 'react'
 import AppStateContext from './AppStateContext';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 import consts from '../config/consts';
 import CustomText from './CustomText';
 import colors from '../config/colors';
@@ -21,7 +21,7 @@ const YearlyGoal = () => {
     useEffect(() => {
         setIsLoaded(consts.loadingStates.LOADING);
         const getGoal = async () => {
-            let snapshot = await db.collection('user').doc(context.uid).get();
+            let snapshot = await db.collection('user').doc(auth.currentUser?.uid).get();
             let currYear = new Date().getFullYear();
 
             if (snapshot.data()["goal" + currYear]) {
@@ -30,7 +30,7 @@ const YearlyGoal = () => {
         }
 
         const getRead = async () => {
-            let snapshot = await db.collection("bookshelves").doc(context.uid).get();
+            let snapshot = await db.collection("bookshelves").doc(auth.currentUser?.uid).get();
             setRead(snapshot.data().read.length);
             setIsLoaded(consts.loadingStates.SUCCESS);
         }
@@ -42,14 +42,14 @@ const YearlyGoal = () => {
     return (
         <View>
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                <CustomText text={"Yearly goal"} size={24} />
+                <CustomText text={`${new Date().getFullYear()} goal`} size={24} />
                 <TouchableOpacity activeOpacity={0.7} onPress={setShowModal} style={{ marginHorizontal: 10 }}>
                     <Ionicons name="create-outline" style={{ fontSize: 20 }} />
                 </TouchableOpacity>
             </View>
 
             {goal == 0 && isLoaded == consts.loadingStates.SUCCESS && <View>
-                <View style={{ marginVertical: 10 }}><CustomText text="no yearly goal set" align={"center"} /></View>
+                <View style={{ marginVertical: 10 }}><CustomText text="no yearly goal set!" align={"center"} /></View>
             </View>}
             {goal != 0 && isLoaded == consts.loadingStates.SUCCESS && 
                 <View>
@@ -65,14 +65,14 @@ const YearlyGoal = () => {
                 animationOutTiming={200}>
                 <View style={styles.centeredDiv}>
                     <View style={styles.modalView}>
-                        <View style={{ marginBottom: 10 }}><CustomText text={"Set yearly goal"} weight={"medium"} size={20} /></View>
+                        <View style={{ marginBottom: 10 }}><CustomText text={"Установить цель"} weight={"medium"} size={20} /></View>
                         <View style={styles.inputContainer}>
                             <TextInput
                                 placeholder='new yearly goal'
                                 style={[styles.input,
                                 { fontFamily: "Montserrat-Regular" }
                                 ]}
-                                value={changedGoal}
+                                value={changedGoal.toString()}
                                 onChangeText={(text) => {
                                     setChangedGoal(text);
                                 }}
@@ -80,7 +80,7 @@ const YearlyGoal = () => {
                             <CustomButton text="submit" onPress={async () => {
                                 setShowModal(false);
                                 setGoal(changedGoal);
-                                await db.collection("user").doc(context.uid).update({
+                                await db.collection("user").doc(auth.currentUser?.uid).update({
                                     ["goal" + new Date().getFullYear()]: changedGoal
                                 });
                             }} />
